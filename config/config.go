@@ -7,8 +7,13 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+type MongoDb struct {
+	ConnectionUri string `envconfig:"mongo_connectionuri"`
+}
+
 type Config struct {
 	Provider string `envconfig:"provider"`
+	Mongo MongoDb
 }
 
 var cfg Config

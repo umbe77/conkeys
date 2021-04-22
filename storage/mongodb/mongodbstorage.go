@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"conkeys/config"
 	"conkeys/storage"
 	"context"
 	"fmt"
@@ -33,7 +34,12 @@ func getCtx(timeout time.Duration) (context.Context, context.CancelFunc) {
 }
 
 func (m MongoStorage) Init() {
-	connectionUri := "mongodb://localhost"
+	cfg := config.GetConfig()
+	connectionUri := "mongodb://127.0.0.1"
+	if cfg.Mongo.ConnectionUri != "" {
+		connectionUri = cfg.Mongo.ConnectionUri
+	}
+	fmt.Println(connectionUri)
 	var err error
 	conn, err = mongo.NewClient(options.Client().ApplyURI(connectionUri))
 	if err != nil {
