@@ -1,18 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"conkeys/api"
+	"conkeys/config"
 	"conkeys/storageprovider"
 )
 
 
 func main() {
+    cfg := config.GetConfig()
+    fmt.Println(cfg.Provider)
     r := gin.Default()
-	stg := storageprovider.GetKeyStorage("mongodb")
+	stg := storageprovider.GetKeyStorage(cfg.Provider)
 
     r.GET("/ping", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{
