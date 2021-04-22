@@ -41,7 +41,7 @@ func TestCheckBool_ko(t *testing.T) {
 }
  
 func TestCheckInteger_ok(t *testing.T) {
-	testValue := Value{T:Integer, V: 12}
+	testValue := Value{T:Integer, V: float64(180)}
 
 	check := testValue.CheckType()
 	if !check {

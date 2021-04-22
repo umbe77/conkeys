@@ -1,6 +1,8 @@
 package storage
 
-import "errors"
+import (
+	"errors"
+)
 
 type ValueType int
 
@@ -25,7 +27,7 @@ func (v ValueType) ToString() (string, error) {
 	case Boolean:
 		return "Boolean", nil
 	}
-		return "", errors.New("Not valid type")
+	return "", errors.New("Not valid type")
 }
 
 func checkString(val interface{}) bool {
@@ -39,8 +41,9 @@ func checkBool(val interface{}) bool {
 }
 
 func checkInteger(val interface{}) bool {
-	_, ok := val.(int)
-	return ok
+	// strVal := fmt.Sprintf("%v", val.V)
+	v, ok := val.(float64)
+	return ok && v == float64(int(v))
 }
 
 func checkDecimal(val interface{}) bool {

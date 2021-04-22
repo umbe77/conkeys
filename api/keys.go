@@ -67,6 +67,7 @@ func Put(stg storage.KeyStorage) func(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error": errorMessage,
 			})
+			return
 		}
 
 		stg.Put(path, val)
