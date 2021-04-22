@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"time"
 )
 
 type ValueType int
@@ -41,13 +42,21 @@ func checkBool(val interface{}) bool {
 }
 
 func checkInteger(val interface{}) bool {
-	// strVal := fmt.Sprintf("%v", val.V)
 	v, ok := val.(float64)
 	return ok && v == float64(int(v))
 }
 
 func checkDecimal(val interface{}) bool {
 	_, ok := val.(float64)
+	return ok
+}
+
+func checkDateTime(val interface{}) bool {
+	str, ok := val.(string)
+	if ok {
+		_, err := time.Parse(time.RFC3339, str)
+		ok = err == nil
+	}
 	return ok
 }
 
@@ -66,6 +75,8 @@ func (v Value) CheckType() bool {
 		return checkDecimal(v.V)
 	case Integer:
 		return checkInteger(v.V)
+	case DateTime:
+		return checkDateTime(v.V)
 	}
 	return false
 }
