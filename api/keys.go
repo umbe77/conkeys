@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Get(stg storage.KeyStorage) func(c *gin.Context) {
+func Get(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		path := c.Param("path")
 		value, err := stg.Get(path)
@@ -23,7 +23,7 @@ func Get(stg storage.KeyStorage) func(c *gin.Context) {
 	return f
 }
 
-func GetKeys(stg storage.KeyStorage) func(c *gin.Context) {
+func GetKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		pathSearch := c.Param("pathSearch")
 		res, err := stg.GetKeys(pathSearch)
@@ -38,7 +38,7 @@ func GetKeys(stg storage.KeyStorage) func(c *gin.Context) {
 	return f
 }
 
-func GetAllKeys(stg storage.KeyStorage) func(c *gin.Context) {
+func GetAllKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		res := stg.GetAllKeys()
 		c.JSON(http.StatusOK, res)
@@ -46,7 +46,7 @@ func GetAllKeys(stg storage.KeyStorage) func(c *gin.Context) {
 	return f
 }
 
-func Put(stg storage.KeyStorage) func(c *gin.Context) {
+func Put(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		var val storage.Value
 		if err := c.ShouldBind(&val); err != nil {
