@@ -11,9 +11,14 @@ type MongoDb struct {
 	ConnectionUri string `envconfig:"mongo_connectionuri"`
 }
 
+type Admin struct {
+	Password string `envconfig:"user_password"`
+}
+
 type Config struct {
 	Provider string `envconfig:"provider"`
-	Mongo MongoDb
+	Admin    Admin
+	Mongo    MongoDb
 }
 
 var cfg Config
