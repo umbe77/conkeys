@@ -28,6 +28,8 @@ func main() {
 
 	// Create or update key must be an authenticated call
 	r.PUT("/api/key/*path", api.Authenticate(), api.Put(stg))
+	r.DELETE("/api/key/*path", api.Authenticate(), api.Delete(stg))
+	r.GET("/api/checktoken", api.Authenticate(), api.CheckToken())
 
 	r.Run()
 }

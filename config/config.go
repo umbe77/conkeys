@@ -11,6 +11,10 @@ type MongoDb struct {
 	ConnectionUri string `envconfig:"mongo_connectionuri"`
 }
 
+type PostegresSQL struct {
+	ConnectionUri string `envconfig:"postgres_connectionuri"`
+}
+
 type Admin struct {
 	Password string `envconfig:"user_password"`
 }
@@ -19,6 +23,7 @@ type Config struct {
 	Provider string `envconfig:"provider"`
 	Admin    Admin
 	Mongo    MongoDb
+	Postgres PostegresSQL
 }
 
 var cfg Config

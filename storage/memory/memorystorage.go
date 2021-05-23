@@ -2,7 +2,6 @@ package memory
 
 import (
 	"conkeys/storage"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -10,7 +9,6 @@ import (
 var c = make(map[string]storage.Value)
 
 type MemoryStorage struct {
-
 }
 
 func (m MemoryStorage) Init() {}
@@ -20,7 +18,7 @@ func (m MemoryStorage) Get(path string) (storage.Value, error) {
 	if ok {
 		return value, nil
 	}
-	return storage.Value{},  errors.New(fmt.Sprintf("%s key not present in storage", path))
+	return storage.Value{}, fmt.Errorf("%s key not present in storage", path)
 }
 
 func (m MemoryStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
@@ -35,7 +33,7 @@ func (m MemoryStorage) GetKeys(pathSearch string) (map[string]storage.Value, err
 	if found {
 		return result, nil
 	}
-	return result, errors.New(fmt.Sprintf("No keys found for %s", pathSearch))
+	return result, fmt.Errorf("no keys found for %s", pathSearch)
 }
 
 func (m MemoryStorage) GetAllKeys() map[string]storage.Value {
@@ -44,4 +42,8 @@ func (m MemoryStorage) GetAllKeys() map[string]storage.Value {
 
 func (m MemoryStorage) Put(path string, value storage.Value) {
 	c[path] = value
+}
+
+func (m MemoryStorage) Delete(path string) {
+	delete(c, path)
 }

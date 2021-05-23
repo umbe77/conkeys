@@ -38,7 +38,8 @@ func Authenticate() gin.HandlerFunc {
 
 			adminPwd := config.GetConfig().Admin.Password
 			sha_512 := sha512.New()
-			secret := fmt.Sprintf("%x", sha_512.Sum([]byte(adminPwd)))
+			sha_512.Write([]byte(adminPwd))
+			secret := fmt.Sprintf("%x", sha_512.Sum(nil))
 
 			hs := jwt.NewHS512([]byte(secret))
 			var pl AuthPayload
@@ -55,4 +56,13 @@ func Authenticate() gin.HandlerFunc {
 		setUnauthorized(c)
 		c.Abort()
 	}
+}
+
+func CheckToken() gin.HandlerFunc {
+	f := func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "OK",
+		})
+	}
+	return f
 }

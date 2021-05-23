@@ -4,6 +4,7 @@ import (
 	"conkeys/storage"
 	"conkeys/storage/memory"
 	"conkeys/storage/mongodb"
+	"conkeys/storage/postgres"
 )
 
 func GetKeyStorage(invariantName string) storage.KeyStorage {
@@ -13,6 +14,8 @@ func GetKeyStorage(invariantName string) storage.KeyStorage {
 		stgProvider = memory.MemoryStorage{}
 	case "mongodb":
 		stgProvider = mongodb.MongoStorage{}
+	case "postgres":
+		stgProvider = postgres.PostgresStorage{}
 	}
 	if stgProvider != nil {
 		stgProvider.Init()

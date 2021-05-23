@@ -87,4 +87,5 @@ type KeyStorage interface {
 	GetKeys(pathSearch string) (map[string]Value, error)
 	GetAllKeys() map[string]Value
 	Put(path string, value Value)
+	Delete(path string)
 }

@@ -74,3 +74,11 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 	}
 	return f
 }
+
+func Delete(stg storage.KeyStorage) gin.HandlerFunc {
+	f := func(c *gin.Context) {
+		path := c.Param("path")
+		stg.Delete(path)
+	}
+	return f
+}
