@@ -23,3 +23,16 @@ func GetKeyStorage(invariantName string) storage.KeyStorage {
 	}
 	return nil
 }
+
+func GetUserStorage(invariantName string) storage.UserStorage {
+	var usrProvider storage.UserStorage
+	switch invariantName {
+	case "memory":
+		usrProvider = memory.UserMemoryStorage{}
+	}
+	if usrProvider != nil {
+		usrProvider.Init()
+		return usrProvider
+	}
+	return nil
+}

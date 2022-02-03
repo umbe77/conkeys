@@ -34,7 +34,7 @@ func (m PostgresStorage) Init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//TODO: Create keys table if not exists
+
 	_, cErr := db.Exec(`CREATE TABLE IF NOT EXISTS keys (
 		Key VARCHAR PRIMARY KEY NOT NULL,
 		Value JSON NOT NULL

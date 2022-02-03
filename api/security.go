@@ -1,15 +1,18 @@
 package api
 
 import (
-	"conkeys/config"
+	"conkeys/storage"
 	"crypto/sha512"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
-	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
+
+var secret = "a;ncieyu89c7y48374q8c ;58yncq8oy5nc58390ycnq835[ncy8*{}@(!&*% &yhn sdUPDA(O*&Y{P(!@*#&BINDUP(O*&(P*)&P($OI@UYO:yu@ad"
 
 func setUnauthorized(c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, gin.H{
@@ -17,9 +20,14 @@ func setUnauthorized(c *gin.Context) {
 	})
 }
 
-type AuthPayload struct {
-	jwt.Payload
-	Usr string `json:"usr,omitempty"`
+// type AuthPayload struct {
+// 	jwt.Payload
+// 	Usr string `json:"usr,omitempty"`
+// }
+
+type UserLogin struct {
+	UserName string `json:"userName"`
+	Password string `json:"password"`
 }
 
 func Authenticate() gin.HandlerFunc {
@@ -27,7 +35,6 @@ func Authenticate() gin.HandlerFunc {
 
 		if authHeaderVal, ok := c.Request.Header["Authorization"]; ok {
 			authHeader := authHeaderVal[0]
-
 			if !strings.HasPrefix(authHeader, "Bearer ") {
 				setUnauthorized(c)
 				c.Abort()
@@ -36,22 +43,23 @@ func Authenticate() gin.HandlerFunc {
 
 			authJwt := strings.Replace(authHeader, "Bearer ", "", 1)
 
-			adminPwd := config.GetConfig().Admin.Password
-			sha_512 := sha512.New()
-			sha_512.Write([]byte(adminPwd))
-			secret := fmt.Sprintf("%x", sha_512.Sum(nil))
+			token, tkErr := jwt.Parse(authJwt, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("Unexpected signin method")
+				}
+				return []byte(secret), nil
+			})
 
-			hs := jwt.NewHS512([]byte(secret))
-			var pl AuthPayload
-			_, err := jwt.Verify([]byte(authJwt), hs, &pl)
-			if err != nil {
+			if tkErr != nil {
 				setUnauthorized(c)
 				c.Abort()
 				return
 			}
 
-			c.Next()
-			return
+			if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+				c.Next()
+				return
+			}
 		}
 		setUnauthorized(c)
 		c.Abort()
@@ -65,4 +73,51 @@ func CheckToken() gin.HandlerFunc {
 		})
 	}
 	return f
+}
+
+func Token(u storage.UserStorage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var usr UserLogin
+		if err := c.ShouldBind(&usr); err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		sha_512 := sha512.New()
+		sha_512.Write([]byte(usr.Password))
+		pwd := fmt.Sprintf("%x", sha_512.Sum(nil))
+
+		pwd_db, usrErr := u.Get(usr.UserName)
+		if usrErr != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "User Unauthorized",
+			})
+			return
+		}
+
+		if pwd != pwd_db.Password {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "User Unauthorized",
+			})
+			return
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+			"u":   usr.UserName,
+			"exp": time.Now().Add(time.Hour * 1).Unix(),
+		})
+
+		tokenString, tkErr := token.SignedString([]byte(secret))
+		if tkErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"token": tokenString,
+		})
+
+	}
 }
