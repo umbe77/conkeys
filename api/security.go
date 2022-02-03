@@ -104,10 +104,12 @@ func Token(u storage.UserStorage) gin.HandlerFunc {
 			return
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-			"u":   usr.UserName,
-			"exp": time.Now().Add(time.Hour * 1).Unix(),
-		})
+		claims := &jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
+			Issuer: "UMBE",
+			IssuedAt: time.Now().Unix(),
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 
 		tokenString, tkErr := token.SignedString([]byte(secret))
 		if tkErr != nil {

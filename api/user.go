@@ -6,31 +6,31 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUsers(user storage.UserStorage) gin.HandlerFunc {
+func GetUsers(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
 }
 
-func GetUser(user storage.UserStorage) gin.HandlerFunc {
+func GetUser(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
 }
 
-func AddUser(user storage.UserStorage) gin.HandlerFunc {
+func AddUser(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
 }
 
-func UpdateUser(user storage.UserStorage) gin.HandlerFunc {
+func UpdateUser(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
 }
 
-func DeleteUser(user storage.UserStorage) gin.HandlerFunc {
+func DeleteUser(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
