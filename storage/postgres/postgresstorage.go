@@ -16,7 +16,7 @@ import (
 
 type PostgresStorage struct{}
 
-var db *sql.DB
+var dbKeys *sql.DB
 
 func (m PostgresStorage) Init() {
 	cfg := config.GetConfig()
@@ -26,16 +26,16 @@ func (m PostgresStorage) Init() {
 	}
 
 	var err error
-	db, err = sql.Open("postgres", connectionUri)
+	dbKeys, err = sql.Open("postgres", connectionUri)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.Ping()
+	err = dbKeys.Ping()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, cErr := db.Exec(`CREATE TABLE IF NOT EXISTS keys (
+	_, cErr := dbKeys.Exec(`CREATE TABLE IF NOT EXISTS keys (
 		Key VARCHAR PRIMARY KEY NOT NULL,
 		Value JSON NOT NULL
 	)`)
@@ -46,7 +46,7 @@ func (m PostgresStorage) Init() {
 }
 
 func (m PostgresStorage) Get(path string) (storage.Value, error) {
-	stmt, err := db.Prepare("SELECT value FROM keys WHERE key = $1")
+	stmt, err := dbKeys.Prepare("SELECT value FROM keys WHERE key = $1")
 	if err != nil {
 		return storage.Value{}, err
 	}
@@ -77,7 +77,7 @@ func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, e
 	result := make(map[string]storage.Value)
 	normalizedPathSearch := strings.TrimPrefix(pathSearch, "/")
 
-	stmt, err := db.Prepare("SELECT key, value FROM keys WHERE key LIKE $1")
+	stmt, err := dbKeys.Prepare("SELECT key, value FROM keys WHERE key LIKE $1")
 	if err != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}
@@ -107,7 +107,7 @@ func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, e
 
 func (m PostgresStorage) GetAllKeys() map[string]storage.Value {
 	result := make(map[string]storage.Value)
-	rows, qErr := db.Query("SELECT key, value FROM keys")
+	rows, qErr := dbKeys.Query("SELECT key, value FROM keys")
 	if qErr != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", qErr)
 	}
@@ -132,7 +132,7 @@ func (m PostgresStorage) GetAllKeys() map[string]storage.Value {
 }
 
 func (m PostgresStorage) Put(path string, val storage.Value) {
-	stmt, err := db.Prepare(`INSERT INTO keys
+	stmt, err := dbKeys.Prepare(`INSERT INTO keys
 	(key, value)
 	VALUES
 	($1, $2)
@@ -152,7 +152,7 @@ func (m PostgresStorage) Put(path string, val storage.Value) {
 }
 
 func (m PostgresStorage) Delete(path string) {
-	stmt, err := db.Prepare("DELETE FROM keys WHERE key = $1")
+	stmt, err := dbKeys.Prepare("DELETE FROM keys WHERE key = $1")
 	if err != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}

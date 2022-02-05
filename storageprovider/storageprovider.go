@@ -29,6 +29,8 @@ func GetUserStorage(invariantName string) storage.UserStorage {
 	switch invariantName {
 	case "memory":
 		usrProvider = memory.UserMemoryStorage{}
+	case "postgres":
+		usrProvider = postgres.PostgresUserStorage{}
 	}
 	if usrProvider != nil {
 		usrProvider.Init()

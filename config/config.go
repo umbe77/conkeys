@@ -16,7 +16,7 @@ type PostegresSQL struct {
 }
 
 type Admin struct {
-	Password string `envconfig:"user_password"`
+	Password string `envconfig:"admin_password"`
 }
 
 type Config struct {
