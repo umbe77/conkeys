@@ -55,5 +55,6 @@ func (u UserMemoryStorage) SetPassword(userName string, password string) {
 	usr, ok := users[userName]
 	if ok {
 		usr.Password = password
+		users[userName] = usr
 	}
 }

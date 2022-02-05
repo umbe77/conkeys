@@ -2,7 +2,7 @@ package api
 
 import (
 	"conkeys/storage"
-	"crypto/sha512"
+	"conkeys/utility"
 	"fmt"
 	"net/http"
 	"strings"
@@ -85,9 +85,7 @@ func Token(u storage.UserStorage) gin.HandlerFunc {
 			return
 		}
 
-		sha_512 := sha512.New()
-		sha_512.Write([]byte(usr.Password))
-		pwd := fmt.Sprintf("%x", sha_512.Sum(nil))
+		pwd := utility.EncondePassword(usr.Password)
 
 		pwd_db, usrErr := u.Get(usr.UserName)
 		if usrErr != nil {

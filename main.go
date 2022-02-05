@@ -5,6 +5,7 @@ import (
 	"conkeys/config"
 	"conkeys/storage"
 	"conkeys/storageprovider"
+	"conkeys/utility"
 	"fmt"
 	"net/http"
 
@@ -27,7 +28,7 @@ func main() {
 			Email:    "",
 		}
 		usrStorage.Add(adminUser)
-		usrStorage.SetPassword(adminUser.UserName, cfg.Admin.Password)
+		usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
 	}
 
 	r.GET("/ping", func(c *gin.Context) {
@@ -45,7 +46,7 @@ func main() {
 	r.DELETE("/api/key/*path", api.Authenticate(), api.Delete(stg))
 	r.GET("/api/checktoken", api.Authenticate(), api.CheckToken())
 
-	r.GET("/api/token", api.Token(usrStorage))
+	r.POST("/api/token", api.Token(usrStorage))
 
 	r.GET("/api/user/*username", api.Authenticate(), api.GetUser(usrStorage))
 	r.GET("/api/users/*userquery", api.Authenticate(), api.GetUsers(usrStorage))
