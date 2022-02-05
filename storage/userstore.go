@@ -12,8 +12,8 @@ type UserStorage interface {
 	Init()
 	Get(userName string) (User, error)
 	GetUsers(query string) ([]User, error)
-	Add(usr User) 
-	Update(usr User)
-	Delete(userName string)
+	Add(usr User) (error)
+	Update(usr User) (error)
+	Delete(userName string) (error)
 	SetPassword(userName string, password string)
 }
