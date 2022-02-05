@@ -47,8 +47,10 @@ func main() {
 
 	r.GET("/api/token", api.Token(usrStorage))
 
+	r.GET("/api/user/*username", api.Authenticate(), api.GetUser(usrStorage))
+	r.GET("/api/users/*userquery", api.Authenticate(), api.GetUsers(usrStorage))
 	r.POST("/api/user", api.Authenticate(), api.AddUser(usrStorage))
-	r.PUT("/api/user/*username", api.Authenticate(), api.UpdateUser(usrStorage))
+	r.PUT("/api/user", api.Authenticate(), api.UpdateUser(usrStorage))
 	r.DELETE("/api/user/*username", api.Authenticate(), api.DeleteUser(usrStorage))
 
 	r.Run()
