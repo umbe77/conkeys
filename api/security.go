@@ -87,7 +87,7 @@ func Token(u storage.UserStorage) gin.HandlerFunc {
 
 		pwd := utility.EncondePassword(usr.Password)
 
-		pwd_db, usrErr := u.Get(usr.UserName)
+		pwd_db, usrErr := u.GetPassword(usr.UserName)
 		if usrErr != nil {
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": "User Unauthorized",
@@ -95,7 +95,7 @@ func Token(u storage.UserStorage) gin.HandlerFunc {
 			return
 		}
 
-		if pwd != pwd_db.Password {
+		if pwd != pwd_db {
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": "User Unauthorized",
 			})

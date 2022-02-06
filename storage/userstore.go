@@ -5,7 +5,6 @@ type User struct {
 	Name string `json:"name"`
 	LastName string `json:"lastName"`
 	Email string `json:"email"`
-	Password string `json:"password"`
 }
 
 type UserStorage interface {
@@ -15,5 +14,6 @@ type UserStorage interface {
 	Add(usr User) (error)
 	Update(usr User) (error)
 	Delete(userName string) (error)
-	SetPassword(userName string, password string)
+	SetPassword(userName string, password string) (error)
+	GetPassword(userName string) (string, error)
 }

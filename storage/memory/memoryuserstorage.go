@@ -2,11 +2,13 @@ package memory
 
 import (
 	"conkeys/storage"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 var users = make(map[string]storage.User)
+var passwords = make(map[string]string)
 
 type UserMemoryStorage struct{}
 
@@ -51,10 +53,18 @@ func (u UserMemoryStorage) Delete (userName string) (error) {
 	return nil
 }
 
-func (u UserMemoryStorage) SetPassword(userName string, password string) {
-	usr, ok := users[userName]
+func (u UserMemoryStorage) SetPassword(userName string, password string) (error) {
+	_, ok := passwords[userName]
 	if ok {
-		usr.Password = password
-		users[userName] = usr
+		passwords[userName] = password
 	}
+	return nil
+}
+
+func (u UserMemoryStorage) GetPassword(userName string) (string, error) {
+	pwd, ok := passwords[userName]
+	if !ok {
+		return "", errors.New("User not present")
+	}
+	return pwd, nil
 }

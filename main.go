@@ -15,11 +15,13 @@ import (
 func main() {
 	cfg := config.GetConfig()
 	fmt.Println(cfg.Provider)
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	stg := storageprovider.GetKeyStorage(cfg.Provider)
 	usrStorage := storageprovider.GetUserStorage(cfg.Provider)
 
 	adminUser, getUsrErr := usrStorage.Get("admin")
+	fmt.Printf("%v\n", getUsrErr)
 	if getUsrErr != nil {
 		adminUser = storage.User{
 			UserName: "admin",
@@ -48,8 +50,8 @@ func main() {
 
 	r.POST("/api/token", api.Token(usrStorage))
 
-	r.GET("/api/user/*username", api.Authenticate(), api.GetUser(usrStorage))
-	r.GET("/api/users/*userquery", api.Authenticate(), api.GetUsers(usrStorage))
+	r.GET("/api/user/:username", api.Authenticate(), api.GetUser(usrStorage))
+	r.GET("/api/users", api.Authenticate(), api.GetUsers(usrStorage))
 	r.POST("/api/user", api.Authenticate(), api.AddUser(usrStorage))
 	r.PUT("/api/user", api.Authenticate(), api.UpdateUser(usrStorage))
 	r.DELETE("/api/user/*username", api.Authenticate(), api.DeleteUser(usrStorage))

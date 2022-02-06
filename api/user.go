@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TODO: remove password from model returned
 func GetUsers(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		query := c.Param("userquery")
+		// query := c.Param("userquery")
+		query := ""
 		users, err := u.GetUsers(query)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -22,7 +22,6 @@ func GetUsers(u storage.UserStorage) gin.HandlerFunc {
 	}
 }
 
-// TODO: remove password from model returned
 func GetUser(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userName := c.Param("username")

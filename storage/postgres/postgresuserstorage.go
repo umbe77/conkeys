@@ -30,11 +30,11 @@ func (s PostgresUserStorage) Init() {
 	}
 
 	_, cErr := dbUsers.Exec(`CREATE TABLE IF NOT EXISTS users (
-		UserName VARCHAR PRIMARY KEY NOT NULL,
-		FirstName VARCHAR NULL,
-        LastName VARCHAR NULL,
-        Email VARCHAR,
-        "Password" VARCHAR
+		username VARCHAR PRIMARY KEY NOT NULL,
+		firstname VARCHAR NULL,
+        lastname VARCHAR NULL,
+        email VARCHAR,
+        "password" VARCHAR
 	)`)
 	if cErr != nil {
 		log.Fatal(cErr)
@@ -42,7 +42,7 @@ func (s PostgresUserStorage) Init() {
 }
 
 func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
-	stmt, err := dbUsers.Prepare("SELECT UserName, FirstName, LastName, Email, Password FROM users WHERE UserName = $1")
+	stmt, err := dbUsers.Prepare("SELECT FirstName, LastName, Email FROM users WHERE UserName = $1")
 	if err != nil {
 		return storage.User{}, nil
 	}
@@ -55,8 +55,8 @@ func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		var name, lastName, email, password string
-		sErr := rows.Scan(&name, &lastName, &email, &password)
+		var name, lastName, email string
+		sErr := rows.Scan(&name, &lastName, &email)
 		if sErr != nil {
 			return storage.User{}, sErr
 		}
@@ -65,7 +65,6 @@ func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
 			Name: name,
 			LastName: lastName,
 			Email: email,
-			Password: password,
 		}, nil
 	}
 	return storage.User{}, errors.New("no user found")
@@ -134,15 +133,39 @@ func (s PostgresUserStorage) Delete(userName string) error {
 	return iErr
 }
 
-func (s PostgresUserStorage) SetPassword(userName string, password string) {
-	stmt, _ := dbUsers.Prepare(`UPDATE users
+func (s PostgresUserStorage) SetPassword(userName string, password string) (error) {
+	stmt, err := dbUsers.Prepare(`UPDATE users
 	SET Password = $2
 	WHERE UserName = $1`)
 
-	// if err != nil {
-	// 	return err
-	// }
+	if err != nil {
+		return err
+	}
 	
-	stmt.Exec(userName, password)
-	// return iErr
+	_, iErr := stmt.Exec(userName, password)
+	return iErr
 }
+
+func (s PostgresUserStorage) GetPassword(userName string) (string, error) {
+	stmt, err := dbUsers.Prepare("SELECT Password FROM users WHERE UserName = $1")
+	if err != nil {
+		return "", err
+	}
+	rows, qErr := stmt.Query(userName)
+	if qErr != nil {
+		return "", qErr
+	}
+	
+	defer rows.Close()
+
+	if rows.Next() {
+		var password string
+		sErr := rows.Scan(&password)
+		if sErr != nil {
+			return "", sErr
+		}
+		return password, nil
+	}
+	return "", nil
+}
+
