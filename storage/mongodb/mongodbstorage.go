@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -89,15 +88,13 @@ func (m MongoStorage) Get(path string) (storage.Value, error) {
 func (m MongoStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
 	result := make(map[string]storage.Value)
 
-	normalizedPathSearch := strings.TrimPrefix(pathSearch, "/")
-
 	col := db.Collection("keys")
 	ctx, cancel := getCtx(0)
 	defer cancel()
 	filter := bson.D{
 		primitive.E{
 			Key:   "key",
-			Value: primitive.Regex{Pattern: fmt.Sprintf("^%s", normalizedPathSearch)},
+			Value: primitive.Regex{Pattern: fmt.Sprintf("^%s", pathSearch)},
 		},
 	}
 
@@ -149,17 +146,15 @@ func (m MongoStorage) Put(path string, val storage.Value) {
 	u.SetUpsert(true)
 	defer cancel()
 
-	normalizedPath := strings.TrimPrefix(path, "/")
-
 	filter := bson.D{
 		primitive.E{
 			Key:   "key",
-			Value: normalizedPath,
+			Value: path,
 		},
 	}
 
 	v := KeyStoreValue{
-		Key:   normalizedPath,
+		Key:   path,
 		Value: val,
 	}
 
@@ -171,5 +166,5 @@ func (m MongoStorage) Delete(path string) {
 	col := db.Collection("keys")
 	ctx, cancel := getCtx(0)
 	defer cancel()
-	col.DeleteOne(ctx, bson.M{"key": strings.TrimPrefix(path, "/")})
+	col.DeleteOne(ctx, bson.M{"key": path})
 }

@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TODO: Find a standard way to parse a query language (possibly not odata)
 func GetUsers(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// query := c.Param("userquery")
-		query := ""
+		query := c.Query("userquery")
 		users, err := u.GetUsers(query)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{

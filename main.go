@@ -14,14 +14,13 @@ import (
 
 func main() {
 	cfg := config.GetConfig()
-	fmt.Println(cfg.Provider)
+	fmt.Printf("using %s provider\n", cfg.Provider)
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	router := gin.Default()
 	stg := storageprovider.GetKeyStorage(cfg.Provider)
 	usrStorage := storageprovider.GetUserStorage(cfg.Provider)
 
 	adminUser, getUsrErr := usrStorage.Get("admin")
-	fmt.Printf("%v\n", getUsrErr)
 	if getUsrErr != nil {
 		adminUser = storage.User{
 			UserName: "admin",
@@ -33,28 +32,29 @@ func main() {
 		usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
 	}
 
-	r.GET("/ping", func(c *gin.Context) {
+	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
 
-	r.GET("/api/key/*path", api.Get(stg))
-	r.GET("/api/keys/*pathSearch", api.GetKeys(stg))
-	r.GET("/api/keys", api.GetAllKeys(stg))
+	router.GET("/api/key/*path", api.Get(stg))
+	router.GET("/api/keys/*pathSearch", api.GetKeys(stg))
+	router.GET("/api/keys", api.GetAllKeys(stg))
 
 	// Create or update key must be an authenticated call
-	r.PUT("/api/key/*path", api.Authenticate(), api.Put(stg))
-	r.DELETE("/api/key/*path", api.Authenticate(), api.Delete(stg))
-	r.GET("/api/checktoken", api.Authenticate(), api.CheckToken())
+	router.PUT("/api/key/*path", api.Authenticate(), api.Put(stg))
+	router.DELETE("/api/key/*path", api.Authenticate(), api.Delete(stg))
+	router.GET("/api/checktoken", api.Authenticate(), api.CheckToken())
 
-	r.POST("/api/token", api.Token(usrStorage))
+	router.POST("/api/token", api.Token(usrStorage))
 
-	r.GET("/api/user/:username", api.Authenticate(), api.GetUser(usrStorage))
-	r.GET("/api/users", api.Authenticate(), api.GetUsers(usrStorage))
-	r.POST("/api/user", api.Authenticate(), api.AddUser(usrStorage))
-	r.PUT("/api/user", api.Authenticate(), api.UpdateUser(usrStorage))
-	r.DELETE("/api/user/*username", api.Authenticate(), api.DeleteUser(usrStorage))
+	// TODO: Restrict access to users api only to administrator and not all authenticated users
+	router.GET("/api/user/:username", api.Authenticate(), api.GetUser(usrStorage))
+	router.GET("/api/users", api.Authenticate(), api.GetUsers(usrStorage))
+	router.POST("/api/user", api.Authenticate(), api.AddUser(usrStorage))
+	router.PUT("/api/user", api.Authenticate(), api.UpdateUser(usrStorage))
+	router.DELETE("/api/user/*username", api.Authenticate(), api.DeleteUser(usrStorage))
 
-	r.Run()
+	router.Run()
 }

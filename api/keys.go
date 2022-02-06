@@ -4,6 +4,7 @@ import (
 	"conkeys/storage"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +12,8 @@ import (
 func Get(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		path := c.Param("path")
-		value, err := stg.Get(path)
+		normalizedPath := strings.TrimPrefix(path, "/")
+		value, err := stg.Get(normalizedPath)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": err.Error(),
@@ -26,7 +28,8 @@ func Get(stg storage.KeyStorage) gin.HandlerFunc {
 func GetKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		pathSearch := c.Param("pathSearch")
-		res, err := stg.GetKeys(pathSearch)
+		normalizedPathSearch := strings.TrimPrefix(pathSearch, "/")
+		res, err := stg.GetKeys(normalizedPathSearch)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": err.Error(),
@@ -55,6 +58,7 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 			})
 		}
 		path := c.Param("path")
+		normalizedPath := strings.TrimPrefix(path, "/")
 
 		if !val.CheckType() {
 			var errorMessage string
@@ -70,7 +74,10 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 			return
 		}
 
-		stg.Put(path, val)
+		stg.Put(normalizedPath, val)
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("key '%s' saved", normalizedPath),
+		})
 	}
 	return f
 }
@@ -78,7 +85,11 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 func Delete(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		path := c.Param("path")
-		stg.Delete(path)
+		normalizedPath := strings.TrimPrefix(path, "/")
+		stg.Delete(normalizedPath)
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("key '%s' removed", normalizedPath),
+		})
 	}
 	return f
 }

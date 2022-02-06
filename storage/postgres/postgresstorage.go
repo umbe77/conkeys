@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -50,8 +49,7 @@ func (m PostgresStorage) Get(path string) (storage.Value, error) {
 	if err != nil {
 		return storage.Value{}, err
 	}
-	normalizedPath := strings.TrimPrefix(path, "/")
-	rows, qErr := stmt.Query(normalizedPath)
+	rows, qErr := stmt.Query(path)
 	if qErr != nil {
 		return storage.Value{}, qErr
 	}
@@ -75,13 +73,12 @@ func (m PostgresStorage) Get(path string) (storage.Value, error) {
 
 func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
 	result := make(map[string]storage.Value)
-	normalizedPathSearch := strings.TrimPrefix(pathSearch, "/")
 
 	stmt, err := dbKeys.Prepare("SELECT key, value FROM keys WHERE key LIKE $1")
 	if err != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}
-	rows, qErr := stmt.Query(fmt.Sprintf("%s%%", normalizedPathSearch))
+	rows, qErr := stmt.Query(fmt.Sprintf("%s%%", pathSearch))
 	if qErr != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", qErr)
 	}
@@ -142,12 +139,11 @@ func (m PostgresStorage) Put(path string, val storage.Value) {
 	if err != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}
-	normalizedPath := strings.TrimPrefix(path, "/")
 	v, mErr := json.Marshal(val)
 	if mErr != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}
-	stmt.Exec(normalizedPath, v)
+	stmt.Exec(path, v)
 
 }
 
@@ -156,7 +152,6 @@ func (m PostgresStorage) Delete(path string) {
 	if err != nil {
 		fmt.Fprintf(gin.DefaultWriter, "%s", err)
 	}
-	normalizedPath := strings.TrimPrefix(path, "/")
-	stmt.Exec(normalizedPath)
+	stmt.Exec(path)
 
 }
