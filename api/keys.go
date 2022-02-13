@@ -140,7 +140,13 @@ func Delete(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		path := c.Param("path")
 		normalizedPath := strings.TrimPrefix(path, "/")
-		stg.Delete(normalizedPath)
+		err := stg.Delete(normalizedPath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("%s", err),
+			})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": fmt.Sprintf("key '%s' removed", normalizedPath),
 		})

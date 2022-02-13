@@ -90,7 +90,7 @@ type KeyStorage interface {
 	GetEncrypted(path string) (Value, error)
 	GetKeys(pathSearch string) (map[string]Value, error)
 	GetAllKeys() map[string]Value
-	Put(path string, value Value)
-	PutEncrypted(path string, maskedValue Value, encryptedValue string)
-	Delete(path string)
+	Put(path string, value Value) error
+	PutEncrypted(path string, maskedValue Value, encryptedValue string) error
+	Delete(path string) error
 }

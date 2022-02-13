@@ -52,20 +52,19 @@ func (m MemoryStorage) GetAllKeys() map[string]storage.Value {
 	return c
 }
 
-func (m MemoryStorage) Put(path string, value storage.Value) {
+func (m MemoryStorage) Put(path string, value storage.Value) error {
 	c[path] = value
+	return nil
 }
 
-func (m MemoryStorage) PutEncrypted(path string, maskedValue storage.Value, encryptedValue string) {
+func (m MemoryStorage) PutEncrypted(path string, maskedValue storage.Value, encryptedValue string) error {
 	c[path] = maskedValue
 	cEncrypted[path] = encryptedValue
-	// c[path] = storage.Value{
-	// 	T: value.T,
-	// 	V: "********",
-	// }
-	// cEncrypted[path] = fmt.Sprintf("%s", value.V)
+	return nil
 }
 
-func (m MemoryStorage) Delete(path string) {
+func (m MemoryStorage) Delete(path string) error {
 	delete(c, path)
+	delete(cEncrypted, path)
+	return nil
 }
