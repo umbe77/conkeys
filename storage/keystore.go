@@ -28,6 +28,8 @@ func (v ValueType) ToString() (string, error) {
 		return "DateTime", nil
 	case Boolean:
 		return "Boolean", nil
+	case Crypted:
+		return "Crypted", nil
 	}
 	return "", errors.New("Not valid type")
 }
