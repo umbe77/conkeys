@@ -44,6 +44,8 @@ func GetSecurityStorage(invariantName string) storage.SecurityStorage {
 	switch invariantName {
 	case "memory":
 		securityProvider = memory.SecurityMemoryStorage{}
+	case "postgres":
+		securityProvider = postgres.SecurityPostgresStorage{}
 	}
 	if securityProvider != nil {
 		securityProvider.Init()

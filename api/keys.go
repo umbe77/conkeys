@@ -20,10 +20,18 @@ func Get(stg storage.KeyStorage) gin.HandlerFunc {
 			})
 			return
 		}
+		if value.T == storage.Crypted {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": fmt.Sprintf("Cannot access value of %s try to use methods for encrypted values", normalizedPath),
+			})
+			return
+		}
 		c.JSON(http.StatusOK, value)
 	}
 	return f
 }
+
+// TODO: Create a new method to get Crypto typed keys
 
 func GetKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
@@ -57,6 +65,7 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 				"error": err.Error(),
 			})
 		}
+		// TODO: check if not a Crypted value and crypt the value
 		path := c.Param("path")
 		normalizedPath := strings.TrimPrefix(path, "/")
 

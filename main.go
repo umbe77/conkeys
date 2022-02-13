@@ -6,18 +6,11 @@ import (
 	"conkeys/storage"
 	"conkeys/storageprovider"
 	"conkeys/utility"
-	"crypto/rsa"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
-
-var cryptoPublicKey *rsa.PublicKey
-var cryptoPrivateKey *rsa.PrivateKey
-
-var signinPublicKey *rsa.PublicKey
-var signinPrivateKey *rsa.PrivateKey
 
 func main() {
 	cfg := config.GetConfig()
@@ -41,8 +34,8 @@ func main() {
 
 	sec := storageprovider.GetSecurityStorage(cfg.Provider)
 
-	cryptoPrivateKey, cryptoPublicKey = utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
-	signinPrivateKey, signinPublicKey = utility.InitKeyPair(sec.LoadSigninPair, sec.SaveSigninPair)
+	// cryptoPrivateKey, cryptoPublicKey := utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
+	signinPrivateKey, signinPublicKey := utility.InitKeyPair(sec.LoadSigninPair, sec.SaveSigninPair)
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
