@@ -71,6 +71,10 @@ func (m PostgresStorage) Get(path string) (storage.Value, error) {
 	return storage.Value{}, errors.New("no key found")
 }
 
+func (m PostgresStorage) GetEncrypted(path string) (storage.Value, error) {
+	return storage.Value{}, nil
+}
+
 func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
 	result := make(map[string]storage.Value)
 
@@ -147,6 +151,9 @@ func (m PostgresStorage) Put(path string, val storage.Value) {
 
 }
 
+func (m PostgresStorage) PutEncrypted(path string, maskedValue storage.Value, encryptedValue string) {
+
+}
 func (m PostgresStorage) Delete(path string) {
 	stmt, err := dbKeys.Prepare("DELETE FROM keys WHERE key = $1")
 	if err != nil {

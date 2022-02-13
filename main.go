@@ -34,7 +34,7 @@ func main() {
 
 	sec := storageprovider.GetSecurityStorage(cfg.Provider)
 
-	// cryptoPrivateKey, cryptoPublicKey := utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
+	cryptoPrivateKey, cryptoPublicKey := utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
 	signinPrivateKey, signinPublicKey := utility.InitKeyPair(sec.LoadSigninPair, sec.SaveSigninPair)
 
 	router.GET("/ping", func(c *gin.Context) {
@@ -48,8 +48,9 @@ func main() {
 	router.GET("/api/keys", api.GetAllKeys(stg))
 
 	// Create or update key must be an authenticated call
-	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey), api.Put(stg))
+	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey), api.Put(stg, cryptoPublicKey))
 	router.DELETE("/api/key/*path", api.Authenticate(signinPublicKey), api.Delete(stg))
+	router.GET("api/key-enc/*path", api.Authenticate(signinPublicKey), api.GetEncrypted(stg, cryptoPrivateKey))
 
 	router.POST("/api/token", api.Token(usrStorage, signinPrivateKey))
 

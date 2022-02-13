@@ -1,7 +1,10 @@
 package api
 
 import (
+	"conkeys/crypto"
 	"conkeys/storage"
+	"crypto/rsa"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
@@ -31,7 +34,35 @@ func Get(stg storage.KeyStorage) gin.HandlerFunc {
 	return f
 }
 
-// TODO: Create a new method to get Crypto typed keys
+func GetEncrypted(stg storage.KeyStorage, priv *rsa.PrivateKey) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Param("path")
+		normalizedPath := strings.TrimPrefix(path, "/")
+		value, err := stg.GetEncrypted(normalizedPath)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		if value.T != storage.Crypted {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Try to request not encrypted key",
+			})
+			return
+		}
+		encryptedVal := fmt.Sprintf("%s", value.V)
+		vBytes, _ := hex.DecodeString(encryptedVal)
+		bytes, err := crypto.Decrypt(vBytes, priv)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": fmt.Sprintf("%s", err),
+			})
+		}
+		value.V = string(bytes)
+		c.JSON(http.StatusOK, value)
+	}
+}
 
 func GetKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	f := func(c *gin.Context) {
@@ -57,7 +88,7 @@ func GetAllKeys(stg storage.KeyStorage) gin.HandlerFunc {
 	return f
 }
 
-func Put(stg storage.KeyStorage) gin.HandlerFunc {
+func Put(stg storage.KeyStorage, pub *rsa.PublicKey) gin.HandlerFunc {
 	f := func(c *gin.Context) {
 		var val storage.Value
 		if err := c.ShouldBind(&val); err != nil {
@@ -65,9 +96,6 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 				"error": err.Error(),
 			})
 		}
-		// TODO: check if not a Crypted value and crypt the value
-		path := c.Param("path")
-		normalizedPath := strings.TrimPrefix(path, "/")
 
 		if !val.CheckType() {
 			var errorMessage string
@@ -83,7 +111,24 @@ func Put(stg storage.KeyStorage) gin.HandlerFunc {
 			return
 		}
 
-		stg.Put(normalizedPath, val)
+		path := c.Param("path")
+		normalizedPath := strings.TrimPrefix(path, "/")
+
+		if val.T == storage.Crypted {
+			encryptedBytes, err := crypto.Encrypt([]byte(fmt.Sprintf("%s", val.V)), pub)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": fmt.Sprintf("%s", err),
+				})
+				return
+			}
+			encryptedString := hex.EncodeToString(encryptedBytes)
+			val.V = "********"
+			stg.PutEncrypted(normalizedPath, val, encryptedString)
+		} else {
+			stg.Put(normalizedPath, val)
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"message": fmt.Sprintf("key '%s' saved", normalizedPath),
 		})

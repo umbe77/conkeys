@@ -13,6 +13,7 @@ const (
 	String
 	DateTime
 	Boolean
+	Crypted
 )
 
 func (v ValueType) ToString() (string, error) {
@@ -77,6 +78,8 @@ func (v Value) CheckType() bool {
 		return checkInteger(v.V)
 	case DateTime:
 		return checkDateTime(v.V)
+	case Crypted:
+		return checkString(v.V)
 	}
 	return false
 }
@@ -84,8 +87,10 @@ func (v Value) CheckType() bool {
 type KeyStorage interface {
 	Init()
 	Get(path string) (Value, error)
+	GetEncrypted(path string) (Value, error)
 	GetKeys(pathSearch string) (map[string]Value, error)
 	GetAllKeys() map[string]Value
 	Put(path string, value Value)
+	PutEncrypted(path string, maskedValue Value, encryptedValue string)
 	Delete(path string)
 }
