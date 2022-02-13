@@ -3,6 +3,7 @@ package api
 import (
 	"conkeys/storage"
 	"conkeys/utility"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 )
-
-var secret = "a;ncieyu89c7y48374q8c ;58yncq8oy5nc58390ycnq835[ncy8*{}@(!&*% &yhn sdUPDA(O*&Y{P(!@*#&BINDUP(O*&(P*)&P($OI@UYO:yu@ad"
 
 func setUnauthorized(c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, gin.H{
@@ -30,7 +29,7 @@ type UserLogin struct {
 	Password string `json:"password"`
 }
 
-func Authenticate() gin.HandlerFunc {
+func Authenticate(priv *rsa.PublicKey) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		if authHeaderVal, ok := c.Request.Header["Authorization"]; ok {
@@ -44,10 +43,10 @@ func Authenticate() gin.HandlerFunc {
 			authJwt := strings.Replace(authHeader, "Bearer ", "", 1)
 
 			token, tkErr := jwt.Parse(authJwt, func(t *jwt.Token) (interface{}, error) {
-				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 					return nil, fmt.Errorf("Unexpected signin method")
 				}
-				return []byte(secret), nil
+				return priv, nil
 			})
 
 			if tkErr != nil {
@@ -66,16 +65,7 @@ func Authenticate() gin.HandlerFunc {
 	}
 }
 
-func CheckToken() gin.HandlerFunc {
-	f := func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "OK",
-		})
-	}
-	return f
-}
-
-func Token(u storage.UserStorage) gin.HandlerFunc {
+func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var usr UserLogin
 		if err := c.ShouldBind(&usr); err != nil {
@@ -104,12 +94,12 @@ func Token(u storage.UserStorage) gin.HandlerFunc {
 
 		claims := &jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
-			Issuer: "UMBE",
-			IssuedAt: time.Now().Unix(),
+			Issuer:    "UMBE",
+			IssuedAt:  time.Now().Unix(),
 		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+		token := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
 
-		tokenString, tkErr := token.SignedString([]byte(secret))
+		tokenString, tkErr := token.SignedString(pub)
 		if tkErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return

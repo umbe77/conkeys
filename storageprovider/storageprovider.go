@@ -38,3 +38,16 @@ func GetUserStorage(invariantName string) storage.UserStorage {
 	}
 	return nil
 }
+
+func GetSecurityStorage(invariantName string) storage.SecurityStorage {
+	var securityProvider storage.SecurityStorage
+	switch invariantName {
+	case "memory":
+		securityProvider = memory.SecurityMemoryStorage{}
+	}
+	if securityProvider != nil {
+		securityProvider.Init()
+		return securityProvider
+	}
+	return nil
+}

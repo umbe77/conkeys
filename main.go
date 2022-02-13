@@ -6,11 +6,18 @@ import (
 	"conkeys/storage"
 	"conkeys/storageprovider"
 	"conkeys/utility"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+var cryptoPublicKey *rsa.PublicKey
+var cryptoPrivateKey *rsa.PrivateKey
+
+var signinPublicKey *rsa.PublicKey
+var signinPrivateKey *rsa.PrivateKey
 
 func main() {
 	cfg := config.GetConfig()
@@ -32,6 +39,11 @@ func main() {
 		usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
 	}
 
+	sec := storageprovider.GetSecurityStorage(cfg.Provider)
+
+	cryptoPrivateKey, cryptoPublicKey = utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
+	signinPrivateKey, signinPublicKey = utility.InitKeyPair(sec.LoadSigninPair, sec.SaveSigninPair)
+
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
@@ -43,18 +55,17 @@ func main() {
 	router.GET("/api/keys", api.GetAllKeys(stg))
 
 	// Create or update key must be an authenticated call
-	router.PUT("/api/key/*path", api.Authenticate(), api.Put(stg))
-	router.DELETE("/api/key/*path", api.Authenticate(), api.Delete(stg))
-	router.GET("/api/checktoken", api.Authenticate(), api.CheckToken())
+	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey), api.Put(stg))
+	router.DELETE("/api/key/*path", api.Authenticate(signinPublicKey), api.Delete(stg))
 
-	router.POST("/api/token", api.Token(usrStorage))
+	router.POST("/api/token", api.Token(usrStorage, signinPrivateKey))
 
 	// TODO: Restrict access to users api only to administrator and not all authenticated users
-	router.GET("/api/user/:username", api.Authenticate(), api.GetUser(usrStorage))
-	router.GET("/api/users", api.Authenticate(), api.GetUsers(usrStorage))
-	router.POST("/api/user", api.Authenticate(), api.AddUser(usrStorage))
-	router.PUT("/api/user", api.Authenticate(), api.UpdateUser(usrStorage))
-	router.DELETE("/api/user/*username", api.Authenticate(), api.DeleteUser(usrStorage))
+	router.GET("/api/user/:username", api.Authenticate(signinPublicKey), api.GetUser(usrStorage))
+	router.GET("/api/users", api.Authenticate(signinPublicKey), api.GetUsers(usrStorage))
+	router.POST("/api/user", api.Authenticate(signinPublicKey), api.AddUser(usrStorage))
+	router.PUT("/api/user", api.Authenticate(signinPublicKey), api.UpdateUser(usrStorage))
+	router.DELETE("/api/user/*username", api.Authenticate(signinPublicKey), api.DeleteUser(usrStorage))
 
 	router.Run()
 }

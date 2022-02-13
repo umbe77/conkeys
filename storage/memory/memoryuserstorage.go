@@ -38,22 +38,23 @@ func (u UserMemoryStorage) GetUsers(query string) ([]storage.User, error) {
 
 }
 
-func (u UserMemoryStorage) Add (usr storage.User) (error) {
+func (u UserMemoryStorage) Add(usr storage.User) error {
+	users[usr.UserName] = usr
+	passwords[usr.UserName] = ""
+	return nil
+}
+
+func (u UserMemoryStorage) Update(usr storage.User) error {
 	users[usr.UserName] = usr
 	return nil
 }
 
-func (u UserMemoryStorage) Update (usr storage.User) (error) {
-	users[usr.UserName] = usr
-	return nil
-}
-
-func (u UserMemoryStorage) Delete (userName string) (error) {
+func (u UserMemoryStorage) Delete(userName string) error {
 	delete(users, userName)
 	return nil
 }
 
-func (u UserMemoryStorage) SetPassword(userName string, password string) (error) {
+func (u UserMemoryStorage) SetPassword(userName string, password string) error {
 	_, ok := passwords[userName]
 	if ok {
 		passwords[userName] = password

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TODO: Find a standard way to parse a query language (possibly not odata)
+// TODO: Find a standard way to parse a query language (possibly not odata (possibly not odata))
 func GetUsers(u storage.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		query := c.Query("userquery")
