@@ -24,10 +24,7 @@ func Get(stg storage.KeyStorage) gin.HandlerFunc {
 			return
 		}
 		if value.T == storage.Crypted {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": fmt.Sprintf("Cannot access value of %s try to use methods for encrypted values", normalizedPath),
-			})
-			return
+			value.V = "********"
 		}
 		c.JSON(http.StatusOK, value)
 	}
