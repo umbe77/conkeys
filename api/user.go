@@ -2,6 +2,7 @@ package api
 
 import (
 	"conkeys/storage"
+	"conkeys/utility"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,20 @@ func UpdateUser(u storage.UserStorage) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "User Updated",
 		})
+	}
+}
+
+func SetPassword(u storage.UserStorage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userName := c.Param("username")
+		password := c.GetHeader("X-PWD")
+		err := u.SetPassword(userName, utility.EncondePassword(password))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		}
+		c.Status(http.StatusNoContent)
 	}
 }
 

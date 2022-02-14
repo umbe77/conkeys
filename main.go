@@ -27,6 +27,7 @@ func main() {
 			Name:     "Admin",
 			LastName: "Admin",
 			Email:    "",
+			IsAdmin:  true,
 		}
 		usrStorage.Add(adminUser)
 		usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
@@ -48,18 +49,18 @@ func main() {
 	router.GET("/api/keys", api.GetAllKeys(stg))
 
 	// Create or update key must be an authenticated call
-	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey), api.Put(stg, cryptoPublicKey))
-	router.DELETE("/api/key/*path", api.Authenticate(signinPublicKey), api.Delete(stg))
-	router.GET("api/key-enc/*path", api.Authenticate(signinPublicKey), api.GetEncrypted(stg, cryptoPrivateKey))
+	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey, false), api.Put(stg, cryptoPublicKey))
+	router.DELETE("/api/key/*path", api.Authenticate(signinPublicKey, false), api.Delete(stg))
+	router.GET("api/key-enc/*path", api.Authenticate(signinPublicKey, false), api.GetEncrypted(stg, cryptoPrivateKey))
 
 	router.POST("/api/token", api.Token(usrStorage, signinPrivateKey))
 
-	// TODO: Restrict access to users api only to administrator and not all authenticated users
-	router.GET("/api/user/:username", api.Authenticate(signinPublicKey), api.GetUser(usrStorage))
-	router.GET("/api/users", api.Authenticate(signinPublicKey), api.GetUsers(usrStorage))
-	router.POST("/api/user", api.Authenticate(signinPublicKey), api.AddUser(usrStorage))
-	router.PUT("/api/user", api.Authenticate(signinPublicKey), api.UpdateUser(usrStorage))
-	router.DELETE("/api/user/*username", api.Authenticate(signinPublicKey), api.DeleteUser(usrStorage))
+	router.GET("/api/user/:username", api.Authenticate(signinPublicKey, true), api.GetUser(usrStorage))
+	router.GET("/api/users", api.Authenticate(signinPublicKey, true), api.GetUsers(usrStorage))
+	router.POST("/api/user", api.Authenticate(signinPublicKey, true), api.AddUser(usrStorage))
+	router.PUT("/api/user", api.Authenticate(signinPublicKey, true), api.UpdateUser(usrStorage))
+	router.PUT("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
+	router.DELETE("/api/user/*username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
 
 	router.Run()
 }

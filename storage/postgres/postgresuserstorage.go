@@ -34,7 +34,8 @@ func (s PostgresUserStorage) Init() {
 		firstname VARCHAR NULL,
         lastname VARCHAR NULL,
         email VARCHAR,
-        "password" VARCHAR
+        "password" VARCHAR,
+		isAdmin bit
 	)`)
 	if cErr != nil {
 		log.Fatal(cErr)
@@ -42,29 +43,31 @@ func (s PostgresUserStorage) Init() {
 }
 
 func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
-	stmt, err := dbUsers.Prepare("SELECT FirstName, LastName, Email FROM users WHERE UserName = $1")
+	stmt, err := dbUsers.Prepare("SELECT FirstName, LastName, Email, IsAdmin FROM users WHERE UserName = $1")
 	if err != nil {
 		return storage.User{}, nil
 	}
-	
+
 	rows, qErr := stmt.Query(userName)
 	if qErr != nil {
 		return storage.User{}, qErr
 	}
-	
+
 	defer rows.Close()
 
 	if rows.Next() {
 		var name, lastName, email string
-		sErr := rows.Scan(&name, &lastName, &email)
+		var isAdmin bool
+		sErr := rows.Scan(&name, &lastName, &email, &isAdmin)
 		if sErr != nil {
 			return storage.User{}, sErr
 		}
 		return storage.User{
 			UserName: userName,
-			Name: name,
+			Name:     name,
 			LastName: lastName,
-			Email: email,
+			Email:    email,
+			IsAdmin:  isAdmin,
 		}, nil
 	}
 	return storage.User{}, errors.New("no user found")
@@ -74,23 +77,25 @@ func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
 func (s PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
 	result := make([]storage.User, 0)
 
-	rows, qErr := dbUsers.Query("SELECT UserName, FirstName, LastName, Email FROM users")
+	rows, qErr := dbUsers.Query("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM users")
 	if qErr != nil {
 		return result, qErr
 	}
-	
+
 	for rows.Next() {
 		var userName, name, lastName, email string
-		sErr := rows.Scan(&userName, &name, &lastName, &email)
+		var isAdmin bool
+		sErr := rows.Scan(&userName, &name, &lastName, &email, &isAdmin)
 		if sErr != nil {
 			return result, sErr
 		}
 
 		result = append(result, storage.User{
 			UserName: userName,
-			Name: name,
+			Name:     name,
 			LastName: lastName,
-			Email: email,
+			Email:    email,
+			IsAdmin:  isAdmin,
 		})
 	}
 
@@ -99,27 +104,27 @@ func (s PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
 
 func (s PostgresUserStorage) Add(usr storage.User) error {
 	stmt, err := dbUsers.Prepare(`INSERT INTO users
-	(UserName, FirstName, LastName, Email)
+	(UserName, FirstName, LastName, Email, IsAdmin)
 	VALUES
-	($1, $2, $3, $4)`)
+	($1, $2, $3, $4, $5)`)
 	if err != nil {
 		return err
 	}
-	
-	_, iErr := stmt.Exec(usr.UserName, usr.Name, usr.LastName, usr.Email)
+
+	_, iErr := stmt.Exec(usr.UserName, usr.Name, usr.LastName, usr.Email, usr.IsAdmin)
 	return iErr
 }
 
 func (s PostgresUserStorage) Update(usr storage.User) error {
 	stmt, err := dbUsers.Prepare(`UPDATE users
-	SET FirstName = $2, LastName = $3, Email = $4
+	SET FirstName = $2, LastName = $3, Email = $4, IsAdmin = $5
 	WHERE UserName = $1`)
 
 	if err != nil {
 		return err
 	}
-	
-	_, iErr := stmt.Exec(usr.UserName, usr.Name, usr.LastName, usr.Email)
+
+	_, iErr := stmt.Exec(usr.UserName, usr.Name, usr.LastName, usr.Email, usr.IsAdmin)
 	return iErr
 }
 
@@ -128,12 +133,12 @@ func (s PostgresUserStorage) Delete(userName string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	_, iErr := stmt.Exec(userName)
 	return iErr
 }
 
-func (s PostgresUserStorage) SetPassword(userName string, password string) (error) {
+func (s PostgresUserStorage) SetPassword(userName string, password string) error {
 	stmt, err := dbUsers.Prepare(`UPDATE users
 	SET Password = $2
 	WHERE UserName = $1`)
@@ -141,31 +146,31 @@ func (s PostgresUserStorage) SetPassword(userName string, password string) (erro
 	if err != nil {
 		return err
 	}
-	
+
 	_, iErr := stmt.Exec(userName, password)
 	return iErr
 }
 
-func (s PostgresUserStorage) GetPassword(userName string) (string, error) {
-	stmt, err := dbUsers.Prepare("SELECT Password FROM users WHERE UserName = $1")
+func (s PostgresUserStorage) GetPassword(userName string) (string, bool, error) {
+	stmt, err := dbUsers.Prepare("SELECT Password, isAdmin FROM users WHERE UserName = $1")
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	rows, qErr := stmt.Query(userName)
 	if qErr != nil {
-		return "", qErr
+		return "", false, qErr
 	}
-	
+
 	defer rows.Close()
 
 	if rows.Next() {
 		var password string
-		sErr := rows.Scan(&password)
+		var isAdmin bool
+		sErr := rows.Scan(&password, &isAdmin)
 		if sErr != nil {
-			return "", sErr
+			return "", false, sErr
 		}
-		return password, nil
+		return password, isAdmin, nil
 	}
-	return "", nil
+	return "", false, nil
 }
-

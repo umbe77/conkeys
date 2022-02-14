@@ -62,10 +62,11 @@ func (u UserMemoryStorage) SetPassword(userName string, password string) error {
 	return nil
 }
 
-func (u UserMemoryStorage) GetPassword(userName string) (string, error) {
-	pwd, ok := passwords[userName]
-	if !ok {
-		return "", errors.New("User not present")
+func (u UserMemoryStorage) GetPassword(userName string) (string, bool, error) {
+	pwd, okPwd := passwords[userName]
+	user, okUsr := users[userName]
+	if !okPwd || !okUsr {
+		return "", false, errors.New("User not present")
 	}
-	return pwd, nil
+	return pwd, user.IsAdmin, nil
 }

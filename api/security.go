@@ -19,17 +19,17 @@ func setUnauthorized(c *gin.Context) {
 	})
 }
 
-// type AuthPayload struct {
-// 	jwt.Payload
-// 	Usr string `json:"usr,omitempty"`
-// }
+type ConkeysClaims struct {
+	Adm bool `json:"adm"`
+	jwt.StandardClaims
+}
 
 type UserLogin struct {
 	UserName string `json:"userName"`
 	Password string `json:"password"`
 }
 
-func Authenticate(priv *rsa.PublicKey) gin.HandlerFunc {
+func Authenticate(priv *rsa.PublicKey, isAdmin bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		if authHeaderVal, ok := c.Request.Header["Authorization"]; ok {
@@ -42,6 +42,12 @@ func Authenticate(priv *rsa.PublicKey) gin.HandlerFunc {
 
 			authJwt := strings.Replace(authHeader, "Bearer ", "", 1)
 
+			// token, tkErr := jwt.ParseWithClaims(authJwt, &ConkeysClaims{}, func(t *jwt.Token) (interface{}, error) {
+			// 	if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			// 		return nil, fmt.Errorf("Unexpected signin method")
+			// 	}
+			// 	return priv, nil
+			// })
 			token, tkErr := jwt.Parse(authJwt, func(t *jwt.Token) (interface{}, error) {
 				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 					return nil, fmt.Errorf("Unexpected signin method")
@@ -55,7 +61,12 @@ func Authenticate(priv *rsa.PublicKey) gin.HandlerFunc {
 				return
 			}
 
-			if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+				if isAdmin && !claims["adm"].(bool) {
+					setUnauthorized(c)
+					c.Abort()
+					return
+				}
 				c.Next()
 				return
 			}
@@ -77,7 +88,7 @@ func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 
 		pwd := utility.EncondePassword(usr.Password)
 
-		pwd_db, usrErr := u.GetPassword(usr.UserName)
+		pwd_db, isAdmin, usrErr := u.GetPassword(usr.UserName)
 		if usrErr != nil {
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": "User Unauthorized",
@@ -92,10 +103,13 @@ func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 			return
 		}
 
-		claims := &jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
-			Issuer:    "UMBE",
-			IssuedAt:  time.Now().Unix(),
+		claims := ConkeysClaims{
+			isAdmin,
+			jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
+				Issuer:    "UMBE",
+				IssuedAt:  time.Now().Unix(),
+			},
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
 
