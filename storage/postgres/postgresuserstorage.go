@@ -35,7 +35,7 @@ func (s PostgresUserStorage) Init() {
         lastname VARCHAR NULL,
         email VARCHAR,
         "password" VARCHAR,
-		isAdmin bit
+		isAdmin boolean
 	)`)
 	if cErr != nil {
 		log.Fatal(cErr)

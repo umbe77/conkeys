@@ -21,6 +21,7 @@ func main() {
 	usrStorage := storageprovider.GetUserStorage(cfg.Provider)
 
 	adminUser, getUsrErr := usrStorage.Get("admin")
+	fmt.Printf("%v\n", getUsrErr)
 	if getUsrErr != nil {
 		adminUser = storage.User{
 			UserName: "admin",
@@ -29,8 +30,14 @@ func main() {
 			Email:    "",
 			IsAdmin:  true,
 		}
-		usrStorage.Add(adminUser)
-		usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
+		err := usrStorage.Add(adminUser)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+		err = usrStorage.SetPassword(adminUser.UserName, utility.EncondePassword(cfg.Admin.Password))
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
 	}
 
 	sec := storageprovider.GetSecurityStorage(cfg.Provider)
