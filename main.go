@@ -21,7 +21,6 @@ func main() {
 	usrStorage := storageprovider.GetUserStorage(cfg.Provider)
 
 	adminUser, getUsrErr := usrStorage.Get("admin")
-	fmt.Printf("%v\n", getUsrErr)
 	if getUsrErr != nil {
 		adminUser = storage.User{
 			UserName: "admin",
@@ -66,7 +65,7 @@ func main() {
 	router.GET("/api/users", api.Authenticate(signinPublicKey, true), api.GetUsers(usrStorage))
 	router.POST("/api/user", api.Authenticate(signinPublicKey, true), api.AddUser(usrStorage))
 	router.PUT("/api/user", api.Authenticate(signinPublicKey, true), api.UpdateUser(usrStorage))
-	router.PUT("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
+	router.PATCH("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
 	router.DELETE("/api/user/*username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
 
 	router.Run()
