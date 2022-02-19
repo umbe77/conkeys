@@ -5,6 +5,7 @@ import (
 	"conkeys/storage"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 )
 
@@ -73,11 +74,30 @@ func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
 	return storage.User{}, errors.New("no user found")
 }
 
-// TODO: Add Query Logic
+func getAllUsers() (*sql.Rows, error) {
+	return dbUsers.Query("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users")
+}
+
+func getUsersByQuery(query string) (*sql.Rows, error) {
+	stmt, err := dbUsers.Prepare("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stmt.Query(fmt.Sprintf("%%%s%%", query))
+}
+
 func (s PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
 	result := make([]storage.User, 0)
 
-	rows, qErr := dbUsers.Query("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM users")
+	rows, qErr := (func() (*sql.Rows, error) {
+		if len(query) > 0 {
+			return getUsersByQuery(query)
+		}
+		return getAllUsers()
+	})()
+
 	if qErr != nil {
 		return result, qErr
 	}
