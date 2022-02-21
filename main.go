@@ -66,7 +66,7 @@ func main() {
 	router.POST("/api/user", api.Authenticate(signinPublicKey, true), api.AddUser(usrStorage))
 	router.PUT("/api/user", api.Authenticate(signinPublicKey, true), api.UpdateUser(usrStorage))
 	router.PATCH("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
-	router.DELETE("/api/user/*username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
+	router.DELETE("/api/user/:username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
 
 	router.Run()
 }

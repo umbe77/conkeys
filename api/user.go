@@ -110,7 +110,7 @@ func DeleteUser(u storage.UserStorage) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"message": "User Updated",
+			"message": "User Deleted",
 		})
 	}
 }
