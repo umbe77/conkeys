@@ -88,7 +88,7 @@ func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 
 		pwd := utility.EncondePassword(usr.Password)
 
-		pwd_db, isAdmin, usrErr := u.GetPassword(usr.UserName)
+		pwd_db, user, usrErr := u.GetPassword(usr.UserName)
 		if usrErr != nil {
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": "User Unauthorized",
@@ -104,7 +104,7 @@ func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 		}
 
 		claims := ConkeysClaims{
-			isAdmin,
+			user.IsAdmin,
 			jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
 				Issuer:    "UMBE",
@@ -121,6 +121,7 @@ func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"token": tokenString,
+			"user":  user,
 		})
 
 	}

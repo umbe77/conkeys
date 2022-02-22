@@ -16,5 +16,5 @@ type UserStorage interface {
 	Update(usr User) error
 	Delete(userName string) error
 	SetPassword(userName string, password string) error
-	GetPassword(userName string) (string, bool, error)
+	GetPassword(userName string) (string, User, error)
 }

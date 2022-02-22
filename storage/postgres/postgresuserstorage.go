@@ -171,26 +171,32 @@ func (s PostgresUserStorage) SetPassword(userName string, password string) error
 	return iErr
 }
 
-func (s PostgresUserStorage) GetPassword(userName string) (string, bool, error) {
-	stmt, err := dbUsers.Prepare("SELECT Password, isAdmin FROM users WHERE UserName = $1")
+func (s PostgresUserStorage) GetPassword(userName string) (string, storage.User, error) {
+	stmt, err := dbUsers.Prepare("SELECT Password, UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
 	if err != nil {
-		return "", false, err
+		return "", storage.User{}, err
 	}
 	rows, qErr := stmt.Query(userName)
 	if qErr != nil {
-		return "", false, qErr
+		return "", storage.User{}, qErr
 	}
 
 	defer rows.Close()
 
 	if rows.Next() {
-		var password string
+		var password, userName, firstName, lastName, email string
 		var isAdmin bool
-		sErr := rows.Scan(&password, &isAdmin)
+		sErr := rows.Scan(&password, &userName, &firstName, &lastName, &email, &isAdmin)
 		if sErr != nil {
-			return "", false, sErr
+			return "", storage.User{}, sErr
 		}
-		return password, isAdmin, nil
+		return password, storage.User{
+			UserName: userName,
+			Name:     firstName,
+			LastName: lastName,
+			Email:    email,
+			IsAdmin:  isAdmin,
+		}, nil
 	}
-	return "", false, nil
+	return "", storage.User{}, nil
 }
