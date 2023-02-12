@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"conkeys/config"
-	"conkeys/storage"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -10,32 +8,20 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+
+	"conkeys/storage"
 )
 
-type PostgresStorage struct{}
+type PostgresStorage struct {
+	db *sql.DB
+}
 
-var dbKeys *sql.DB
-
-func (m PostgresStorage) Init() {
-	cfg := config.GetConfig()
-	connectionUri := "postgres://conkeys:S0jeje1!@localhost/conkeys?sslmode=disable"
-	if cfg.Postgres.ConnectionUri != "" {
-		connectionUri = cfg.Postgres.ConnectionUri
+func NewKeyStorage(db *sql.DB) *PostgresStorage {
+	store := &PostgresStorage{
+		db: db,
 	}
-
-	var err error
-	dbKeys, err = sql.Open("postgres", connectionUri)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = dbKeys.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, cErr := dbKeys.Exec(`CREATE TABLE IF NOT EXISTS keys (
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS keys (
 		Key VARCHAR PRIMARY KEY NOT NULL,
 		Value JSON NOT NULL
 	);
@@ -43,14 +29,17 @@ func (m PostgresStorage) Init() {
 		Key VARCHAR PRIMARY KEY NOT NULL,
 		Value VARCHAR NOT NULL
 	);`)
-	if cErr != nil {
-		log.Fatal(cErr)
+
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	return store
 
 }
 
-func (m PostgresStorage) Get(path string) (storage.Value, error) {
-	stmt, err := dbKeys.Prepare("SELECT value FROM keys WHERE key = $1")
+func (s *PostgresStorage) Get(path string) (storage.Value, error) {
+	stmt, err := s.db.Prepare("SELECT value FROM keys WHERE key = $1")
 	if err != nil {
 		return storage.Value{}, err
 	}
@@ -76,8 +65,8 @@ func (m PostgresStorage) Get(path string) (storage.Value, error) {
 	return storage.Value{}, errors.New("no key found")
 }
 
-func (m PostgresStorage) GetEncrypted(path string) (storage.Value, error) {
-	stmt, err := dbKeys.Prepare("SELECT value FROM EncryptedKeys WHERE key = $1")
+func (s *PostgresStorage) GetEncrypted(path string) (storage.Value, error) {
+	stmt, err := s.db.Prepare("SELECT value FROM EncryptedKeys WHERE key = $1")
 	if err != nil {
 		return storage.Value{}, err
 	}
@@ -103,16 +92,16 @@ func (m PostgresStorage) GetEncrypted(path string) (storage.Value, error) {
 	return storage.Value{}, errors.New("no key found")
 }
 
-func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
+func (s *PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, error) {
 	result := make(map[string]storage.Value)
 
-	stmt, err := dbKeys.Prepare("SELECT key, value FROM keys WHERE key LIKE $1")
+	stmt, err := s.db.Prepare("SELECT key, value FROM keys WHERE key LIKE $1")
 	if err != nil {
-		fmt.Fprintf(gin.DefaultWriter, "%s", err)
+		return nil, err
 	}
 	rows, qErr := stmt.Query(fmt.Sprintf("%s%%", pathSearch))
 	if qErr != nil {
-		fmt.Fprintf(gin.DefaultWriter, "%s", qErr)
+		return nil, qErr
 	}
 
 	defer rows.Close()
@@ -121,12 +110,12 @@ func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, e
 		var buf []byte
 		sErr := rows.Scan(&key, &buf)
 		if sErr != nil {
-			fmt.Fprintf(gin.DefaultWriter, "%s", sErr)
+			return nil, sErr
 		}
 		v := storage.Value{}
 		uErr := json.Unmarshal(buf, &v)
 		if uErr != nil {
-			fmt.Fprintf(gin.DefaultWriter, "%s", uErr)
+			return nil, sErr
 		}
 		result[key] = v
 	}
@@ -134,11 +123,11 @@ func (m PostgresStorage) GetKeys(pathSearch string) (map[string]storage.Value, e
 	return result, nil
 }
 
-func (m PostgresStorage) GetAllKeys() map[string]storage.Value {
+func (s *PostgresStorage) GetAllKeys() (map[string]storage.Value, error) {
 	result := make(map[string]storage.Value)
-	rows, qErr := dbKeys.Query("SELECT key, value FROM keys")
+	rows, qErr := s.db.Query("SELECT key, value FROM keys")
 	if qErr != nil {
-		fmt.Fprintf(gin.DefaultWriter, "%s", qErr)
+		return nil, qErr
 	}
 
 	defer rows.Close()
@@ -147,17 +136,19 @@ func (m PostgresStorage) GetAllKeys() map[string]storage.Value {
 		var buf []byte
 		sErr := rows.Scan(&key, &buf)
 		if sErr != nil {
-			fmt.Fprintf(gin.DefaultWriter, "%s", sErr)
+			continue
+			//TODO: Set logging
 		}
 		v := storage.Value{}
 		uErr := json.Unmarshal(buf, &v)
 		if uErr != nil {
-			fmt.Fprintf(gin.DefaultWriter, "%s", uErr)
+			continue
+			//TODO: Set logging
 		}
 		result[key] = v
 	}
 
-	return result
+	return result, nil
 }
 
 func putKey(path string, val storage.Value, tx *sql.Tx) error {
@@ -170,19 +161,19 @@ func putKey(path string, val storage.Value, tx *sql.Tx) error {
 	DO
 		UPDATE SET value = $2`)
 	if err != nil {
-		fmt.Fprintf(gin.DefaultWriter, "%s", err)
+		return err
 	}
 	v, mErr := json.Marshal(val)
 	if mErr != nil {
-		fmt.Fprintf(gin.DefaultWriter, "%s", err)
+		return mErr
 	}
 	_, iErr := stmt.Exec(path, v)
 	return iErr
 }
 
-func (m PostgresStorage) Put(path string, val storage.Value) error {
+func (s *PostgresStorage) Put(path string, val storage.Value) error {
 	ctx := context.Background()
-	tx, tErr := dbKeys.BeginTx(ctx, nil)
+	tx, tErr := s.db.BeginTx(ctx, nil)
 	if tErr != nil {
 		tx.Rollback()
 		return tErr
@@ -196,9 +187,9 @@ func (m PostgresStorage) Put(path string, val storage.Value) error {
 	return nil
 }
 
-func (m PostgresStorage) PutEncrypted(path string, maskedValue storage.Value, encryptedValue string) error {
+func (s *PostgresStorage) PutEncrypted(path string, maskedValue storage.Value, encryptedValue string) error {
 	ctx := context.Background()
-	tx, tErr := dbKeys.BeginTx(ctx, nil)
+	tx, tErr := s.db.BeginTx(ctx, nil)
 	if tErr != nil {
 		return tErr
 	}
@@ -231,9 +222,9 @@ func (m PostgresStorage) PutEncrypted(path string, maskedValue storage.Value, en
 	tx.Commit()
 	return nil
 }
-func (m PostgresStorage) Delete(path string) error {
+func (s *PostgresStorage) Delete(path string) error {
 	ctx := context.Background()
-	tx, tErr := dbKeys.BeginTx(ctx, nil)
+	tx, tErr := s.db.BeginTx(ctx, nil)
 	if tErr != nil {
 		return tErr
 	}

@@ -87,11 +87,10 @@ func (v Value) CheckType() bool {
 }
 
 type KeyStorage interface {
-	Init()
 	Get(path string) (Value, error)
 	GetEncrypted(path string) (Value, error)
 	GetKeys(pathSearch string) (map[string]Value, error)
-	GetAllKeys() map[string]Value
+	GetAllKeys() (map[string]Value, error)
 	Put(path string, value Value) error
 	PutEncrypted(path string, maskedValue Value, encryptedValue string) error
 	Delete(path string) error

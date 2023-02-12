@@ -1,24 +1,40 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	"log"
+
+	"github.com/gofiber/fiber/v2"
+
 	"conkeys/api"
 	"conkeys/config"
 	"conkeys/storage"
-	"conkeys/storageprovider"
+	"conkeys/storage/postgres"
 	"conkeys/utility"
-	"fmt"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	cfg := config.GetConfig()
-	fmt.Printf("using %s provider\n", cfg.Provider)
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
-	stg := storageprovider.GetKeyStorage(cfg.Provider)
-	usrStorage := storageprovider.GetUserStorage(cfg.Provider)
+
+	app := fiber.New()
+
+	if cfg.Postgres.ConnectionUri == "" {
+		log.Fatal("No POstgres connection uri defined")
+	}
+	connectionUri := cfg.Postgres.ConnectionUri
+
+	db, err := sql.Open("postgres", connectionUri)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stg := postgres.NewKeyStorage(db)
+	usrStorage := postgres.NewUserStorage(db)
 
 	adminUser, getUsrErr := usrStorage.Get("admin")
 	if getUsrErr != nil {
@@ -39,34 +55,35 @@ func main() {
 		}
 	}
 
-	sec := storageprovider.GetSecurityStorage(cfg.Provider)
+	sec := postgres.NewSecStorage(db)
 
 	cryptoPrivateKey, cryptoPublicKey := utility.InitKeyPair(sec.LoadCryptingPair, sec.SaveCryptingPair)
 	signinPrivateKey, signinPublicKey := utility.InitKeyPair(sec.LoadSigninPair, sec.SaveSigninPair)
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+	app.Get("/ping", func(c *fiber.Ctx) error {
+		c.Status(fiber.StatusOK)
+		return c.JSON(fiber.Map{
 			"message": "pong",
 		})
 	})
 
-	router.GET("/api/key/*path", api.Get(stg))
-	router.GET("/api/keys/*pathSearch", api.GetKeys(stg))
-	router.GET("/api/keys", api.GetAllKeys(stg))
+	app.Get("/api/key/*", api.Get(stg))
+	app.Get("/api/keys/*", api.GetKeys(stg))
+	app.Get("/api/keys", api.GetAllKeys(stg))
 
 	// Create or update key must be an authenticated call
-	router.PUT("/api/key/*path", api.Authenticate(signinPublicKey, false), api.Put(stg, cryptoPublicKey))
-	router.DELETE("/api/key/*path", api.Authenticate(signinPublicKey, false), api.Delete(stg))
-	router.GET("api/key-enc/*path", api.Authenticate(signinPublicKey, false), api.GetEncrypted(stg, cryptoPrivateKey))
+	app.Put("/api/key/*", api.Authenticate(signinPublicKey, false), api.Put(stg, cryptoPublicKey))
+	app.Delete("/api/key/*", api.Authenticate(signinPublicKey, false), api.Delete(stg))
+	app.Get("api/key-enc/*", api.Authenticate(signinPublicKey, false), api.GetEncrypted(stg, cryptoPrivateKey))
 
-	router.POST("/api/token", api.Token(usrStorage, signinPrivateKey))
+	app.Post("/api/token", api.Token(usrStorage, signinPrivateKey))
 
-	router.GET("/api/user/:username", api.Authenticate(signinPublicKey, true), api.GetUser(usrStorage))
-	router.GET("/api/users", api.Authenticate(signinPublicKey, true), api.GetUsers(usrStorage))
-	router.POST("/api/user", api.Authenticate(signinPublicKey, true), api.AddUser(usrStorage))
-	router.PUT("/api/user", api.Authenticate(signinPublicKey, true), api.UpdateUser(usrStorage))
-	router.PATCH("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
-	router.DELETE("/api/user/:username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
+	app.Get("/api/user/:username", api.Authenticate(signinPublicKey, true), api.GetUser(usrStorage))
+	app.Get("/api/users", api.Authenticate(signinPublicKey, true), api.GetUsers(usrStorage))
+	app.Post("/api/user", api.Authenticate(signinPublicKey, true), api.AddUser(usrStorage))
+	app.Put("/api/user", api.Authenticate(signinPublicKey, true), api.UpdateUser(usrStorage))
+	app.Patch("/api/user/password/:username", api.Authenticate(signinPublicKey, true), api.SetPassword(usrStorage))
+	app.Delete("/api/user/:username", api.Authenticate(signinPublicKey, true), api.DeleteUser(usrStorage))
 
-	router.Run()
+	app.Listen(":8080")
 }

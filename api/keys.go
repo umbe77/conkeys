@@ -1,95 +1,102 @@
 package api
 
 import (
-	"conkeys/crypto"
-	"conkeys/storage"
 	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
-	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+
+	"conkeys/crypto"
+	"conkeys/storage"
 )
 
-func Get(stg storage.KeyStorage) gin.HandlerFunc {
-	f := func(c *gin.Context) {
-		path := c.Param("path")
+func Get(stg storage.KeyStorage) fiber.Handler {
+	f := func(c *fiber.Ctx) error {
+		path := c.Params("*")
 		normalizedPath := strings.TrimPrefix(path, "/")
 		value, err := stg.Get(normalizedPath)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
+			c.Status(fiber.StatusNotFound)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
 		if value.T == storage.Crypted {
 			value.V = "********"
 		}
-		c.JSON(http.StatusOK, value)
+		c.Status(fiber.StatusOK)
+		return c.JSON(value)
 	}
 	return f
 }
 
-func GetEncrypted(stg storage.KeyStorage, priv *rsa.PrivateKey) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		path := c.Param("path")
+func GetEncrypted(stg storage.KeyStorage, priv *rsa.PrivateKey) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		path := c.Params("*")
 		normalizedPath := strings.TrimPrefix(path, "/")
 		value, err := stg.GetEncrypted(normalizedPath)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
+			c.Status(fiber.StatusNotFound)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
 		if value.T != storage.Crypted {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.Status(fiber.StatusBadRequest)
+			return c.JSON(fiber.Map{
 				"error": "Try to request not encrypted key",
 			})
-			return
 		}
 		encryptedVal := fmt.Sprintf("%s", value.V)
 		vBytes, _ := hex.DecodeString(encryptedVal)
 		bytes, err := crypto.Decrypt(vBytes, priv)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.Status(fiber.StatusBadRequest)
+			return c.JSON(fiber.Map{
 				"error": fmt.Sprintf("%s", err),
 			})
 		}
 		value.V = string(bytes)
-		c.JSON(http.StatusOK, value)
+		return c.JSON(value)
 	}
 }
 
-func GetKeys(stg storage.KeyStorage) gin.HandlerFunc {
-	f := func(c *gin.Context) {
-		pathSearch := c.Param("pathSearch")
+func GetKeys(stg storage.KeyStorage) fiber.Handler {
+	f := func(c *fiber.Ctx) error {
+		pathSearch := c.Params("*")
 		normalizedPathSearch := strings.TrimPrefix(pathSearch, "/")
 		res, err := stg.GetKeys(normalizedPathSearch)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
+			c.Status(fiber.StatusNotFound)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
-		c.JSON(http.StatusOK, res)
+		return c.JSON(res)
 	}
 	return f
 }
 
-func GetAllKeys(stg storage.KeyStorage) gin.HandlerFunc {
-	f := func(c *gin.Context) {
-		res := stg.GetAllKeys()
-		c.JSON(http.StatusOK, res)
+func GetAllKeys(stg storage.KeyStorage) fiber.Handler {
+	f := func(c *fiber.Ctx) error {
+		res, err := stg.GetAllKeys()
+		if err != nil {
+			//TODO: Add logging
+			return err
+		}
+		return c.JSON(res)
 	}
 	return f
 }
 
-func Put(stg storage.KeyStorage, pub *rsa.PublicKey) gin.HandlerFunc {
-	f := func(c *gin.Context) {
+func Put(stg storage.KeyStorage, pub *rsa.PublicKey) fiber.Handler {
+	f := func(c *fiber.Ctx) error {
 		var val storage.Value
-		if err := c.ShouldBind(&val); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
+		if err := c.BodyParser(&val); err != nil {
+			c.Status(fiber.StatusUnprocessableEntity)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
 		}
@@ -102,22 +109,22 @@ func Put(stg storage.KeyStorage, pub *rsa.PublicKey) gin.HandlerFunc {
 			} else {
 				errorMessage = fmt.Sprintf("%v is not of type %v", val.V, valT)
 			}
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
+			c.Status(fiber.StatusUnprocessableEntity)
+			return c.JSON(fiber.Map{
 				"error": errorMessage,
 			})
-			return
 		}
 
-		path := c.Param("path")
+		path := c.Params("*")
 		normalizedPath := strings.TrimPrefix(path, "/")
 
 		if val.T == storage.Crypted {
 			encryptedBytes, err := crypto.Encrypt([]byte(fmt.Sprintf("%s", val.V)), pub)
 			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
+				c.Status(fiber.StatusBadRequest)
+				return c.JSON(fiber.Map{
 					"error": fmt.Sprintf("%s", err),
 				})
-				return
 			}
 			encryptedString := hex.EncodeToString(encryptedBytes)
 			val.V = "********"
@@ -126,25 +133,23 @@ func Put(stg storage.KeyStorage, pub *rsa.PublicKey) gin.HandlerFunc {
 			stg.Put(normalizedPath, val)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"message": fmt.Sprintf("key '%s' saved", normalizedPath),
 		})
 	}
 	return f
 }
 
-func Delete(stg storage.KeyStorage) gin.HandlerFunc {
-	f := func(c *gin.Context) {
-		path := c.Param("path")
+func Delete(stg storage.KeyStorage) fiber.Handler {
+	f := func(c *fiber.Ctx) error {
+		path := c.Params("*")
 		normalizedPath := strings.TrimPrefix(path, "/")
 		err := stg.Delete(normalizedPath)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("%s", err),
-			})
-			return
+			return err
+			//TODO: Add Logging
 		}
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"message": fmt.Sprintf("key '%s' removed", normalizedPath),
 		})
 	}

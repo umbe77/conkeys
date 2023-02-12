@@ -1,114 +1,118 @@
 package api
 
 import (
+	"fmt"
+
+	"github.com/gofiber/fiber/v2"
+
 	"conkeys/storage"
 	"conkeys/utility"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-func GetUsers(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func GetUsers(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		query := c.Query("filter")
 		users, err := u.GetUsers(query)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
+			c.Status(fiber.StatusNotFound)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
-		c.JSON(http.StatusOK, users)
+		return c.JSON(users)
 	}
 }
 
-func GetUser(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userName := c.Param("username")
+func GetUser(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userName := c.Params("username")
 		usr, err := u.Get(userName)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
+			c.Status(fiber.StatusNotFound)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
-		c.JSON(http.StatusOK, usr)
+		return c.JSON(usr)
 	}
 }
 
-func AddUser(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func AddUser(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		var usr storage.User
-		if err := c.ShouldBind(&usr); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
+		if err := c.BodyParser(&usr); err != nil {
+			c.Status(fiber.StatusUnprocessableEntity)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
 
 		err := u.Add(usr)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
+			c.Status(fiber.StatusInternalServerError)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"message": "User Created",
 		})
 	}
 }
 
-func UpdateUser(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func UpdateUser(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		var usr storage.User
-		if err := c.ShouldBind(&usr); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
+		if err := c.BodyParser(&usr); err != nil {
+			c.Status(fiber.StatusUnprocessableEntity)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
 
 		err := u.Update(usr)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
+			return err
 		}
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
+
 			"message": "User Updated",
 		})
 	}
 }
 
-func SetPassword(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userName := c.Param("username")
-		password := c.GetHeader("X-PWD")
-		err := u.SetPassword(userName, utility.EncondePassword(password))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+func SetPassword(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userName := c.Params("username")
+		if password, ok := c.GetReqHeaders()["X-Pwd"]; ok {
+
+			fmt.Printf("pwd: %s\n", password)
+			err := u.SetPassword(userName, utility.EncondePassword(password))
+			if err != nil {
+				// TODO: Set logging
+				return err
+			}
+			c.Status(fiber.StatusNoContent)
+			return nil
 		}
-		c.Status(http.StatusNoContent)
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "Cannot save an empty password",
+		})
 	}
 }
 
-func DeleteUser(u storage.UserStorage) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func DeleteUser(u storage.UserStorage) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 
-		userName := c.Param("username")
+		userName := c.Params("username")
 
 		err := u.Delete(userName)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
+			// TODO: Set logging
+			return err
 		}
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"message": "User Deleted",
 		})
 	}

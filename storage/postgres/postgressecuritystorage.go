@@ -1,37 +1,24 @@
 package postgres
 
 import (
-	"conkeys/config"
-	"conkeys/crypto"
 	"crypto/rsa"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+
+	"conkeys/crypto"
 )
 
-type SecurityPostgresStorage struct{}
+type PostgresSecurityStorage struct {
+	db *sql.DB
+}
 
-var dbSecurity *sql.DB
-
-func (s SecurityPostgresStorage) Init() {
-	cfg := config.GetConfig()
-	connectionUri := "postgres://conkeys:S0jeje1!@localhost/conkeys?sslmode=disable"
-	if cfg.Postgres.ConnectionUri != "" {
-		connectionUri = cfg.Postgres.ConnectionUri
+func NewSecStorage(db *sql.DB) *PostgresSecurityStorage {
+	store := &PostgresSecurityStorage{
+		db: db,
 	}
-
-	var err error
-	dbSecurity, err = sql.Open("postgres", connectionUri)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = dbUsers.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, cErr := dbSecurity.Exec(`CREATE TABLE IF NOT EXISTS SigningPair (
+	_, err := store.db.Exec(`CREATE TABLE IF NOT EXISTS SigningPair (
 		public VARCHAR NOT NULL,
 		"private" VARCHAR NOT NULL
 	);
@@ -39,13 +26,16 @@ func (s SecurityPostgresStorage) Init() {
 		public VARCHAR NOT NULL,
 		"private" VARCHAR NOT NULL
 	);`)
-	if cErr != nil {
-		log.Fatal(cErr)
+
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	return store
 }
 
-func loadPair(tableName string) (*rsa.PrivateKey, *rsa.PublicKey, error) {
-	rows, qErr := dbSecurity.Query(fmt.Sprintf("SELECT public, private FROM %s", tableName))
+func (s *PostgresSecurityStorage) loadPair(tableName string) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	rows, qErr := s.db.Query(fmt.Sprintf("SELECT public, private FROM %s", tableName))
 	if qErr != nil {
 		return nil, nil, qErr
 	}
@@ -73,14 +63,14 @@ func loadPair(tableName string) (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	return nil, nil, errors.New("No pair found")
 }
 
-func savePair(tableName string, priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
+func (s *PostgresSecurityStorage) savePair(tableName string, priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
 	private := crypto.PrivateKeyToBytes(priv)
 	public, err := crypto.PublicKeyToBytes(pub)
 	if err != nil {
 		return err
 	}
 
-	stmt, sErr := dbSecurity.Prepare(fmt.Sprintf(`INSERT INTO %s
+	stmt, sErr := s.db.Prepare(fmt.Sprintf(`INSERT INTO %s
 	(public, private)
 	VALUES
 	($1, $2)`, tableName))
@@ -95,18 +85,18 @@ func savePair(tableName string, priv *rsa.PrivateKey, pub *rsa.PublicKey) error 
 
 	return nil
 }
-func (s SecurityPostgresStorage) LoadCryptingPair() (*rsa.PrivateKey, *rsa.PublicKey, error) {
-	return loadPair("CryptoPair")
+func (s *PostgresSecurityStorage) LoadCryptingPair() (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	return s.loadPair("CryptoPair")
 }
 
-func (s SecurityPostgresStorage) SaveCryptingPair(priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
-	return savePair("CryptoPair", priv, pub)
+func (s *PostgresSecurityStorage) SaveCryptingPair(priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
+	return s.savePair("CryptoPair", priv, pub)
 }
 
-func (s SecurityPostgresStorage) LoadSigninPair() (*rsa.PrivateKey, *rsa.PublicKey, error) {
-	return loadPair("SigningPair")
+func (s *PostgresSecurityStorage) LoadSigninPair() (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	return s.loadPair("SigningPair")
 }
 
-func (s SecurityPostgresStorage) SaveSigninPair(priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
-	return savePair("SigningPair", priv, pub)
+func (s *PostgresSecurityStorage) SaveSigninPair(priv *rsa.PrivateKey, pub *rsa.PublicKey) error {
+	return s.savePair("SigningPair", priv, pub)
 }

@@ -1,0 +1,177 @@
+[
+  {
+    "_id": "ceecd28e-32ac-41d0-98d2-b6cee9108167",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "All Keys",
+    "url": "http://localhost:8080/api/keys",
+    "method": "GET",
+    "sortNum": 10000,
+    "created": "2023-02-11T15:22:33.059Z",
+    "modified": "2023-02-11T15:23:20.421Z",
+    "headers": [
+      {
+        "name": "User-Agent",
+        "value": "Thunder Client (https://www.thunderclient.com)",
+        "isDisabled": true
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "c595dd09-c66a-447a-b5ad-eb2f616d708c",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Ping",
+    "url": "http://localhost:8080/ping",
+    "method": "GET",
+    "sortNum": 20000,
+    "created": "2023-02-11T15:42:35.788Z",
+    "modified": "2023-02-12T00:05:52.402Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "8d10e17c-f338-4319-b6b7-ab2532341ff2",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "GetKey",
+    "url": "http://localhost:8080/api/key/AC_12/pippo",
+    "method": "GET",
+    "sortNum": 30000,
+    "created": "2023-02-11T17:41:59.550Z",
+    "modified": "2023-02-12T09:12:27.088Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "25b621f5-2bae-4f49-90eb-1b1a7b1205be",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Get Keys",
+    "url": "http://localhost:8080/api/keys/pro",
+    "method": "GET",
+    "sortNum": 40000,
+    "created": "2023-02-11T17:46:38.659Z",
+    "modified": "2023-02-12T09:14:10.687Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "5de110de-04fe-42fd-bfb1-eb6f9ba30da8",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Token",
+    "url": "http://localhost:8080/api/token",
+    "method": "POST",
+    "sortNum": 50000,
+    "created": "2023-02-11T18:15:48.307Z",
+    "modified": "2023-02-12T10:32:01.992Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"userName\": \"roberto\",\n  \"password\": \"S0jeje1!\"\n}",
+      "form": []
+    },
+    "tests": [
+      {
+        "type": "set-env-var",
+        "custom": "json.token",
+        "action": "setto",
+        "value": "{{token}}"
+      }
+    ]
+  },
+  {
+    "_id": "612a437d-1d52-4be4-b698-fb193706acb2",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Save Key",
+    "url": "http://localhost:8080/api/key/a/b",
+    "method": "PUT",
+    "sortNum": 60000,
+    "created": "2023-02-12T00:17:22.452Z",
+    "modified": "2023-02-12T09:12:09.932Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"T\": 2,\n  \"V\": \"prova a/b\"\n}",
+      "form": []
+    },
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "4d1eb207-eb1b-42a0-a6b1-8f6efd0e3dac",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Get Enc Key",
+    "url": "http://localhost:8080/api/key-enc/prova_crypto",
+    "method": "GET",
+    "sortNum": 70000,
+    "created": "2023-02-12T09:07:28.145Z",
+    "modified": "2023-02-12T10:22:13.225Z",
+    "headers": [],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "2890ad16-be16-478b-8995-87e52ba23870",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Get Users",
+    "url": "http://localhost:8080/api/users",
+    "method": "GET",
+    "sortNum": 80000,
+    "created": "2023-02-12T09:15:22.269Z",
+    "modified": "2023-02-12T10:30:10.277Z",
+    "headers": [],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "248c67ed-bcc5-4962-a879-f08b83b86e09",
+    "colId": "20dd39fa-d502-4f38-8921-525055dd0590",
+    "containerId": "",
+    "name": "Set Password",
+    "url": "http://localhost:8080/api/user/password/roberto",
+    "method": "PATCH",
+    "sortNum": 90000,
+    "created": "2023-02-12T09:18:27.276Z",
+    "modified": "2023-02-12T09:26:30.138Z",
+    "headers": [
+      {
+        "name": "X-PWD",
+        "value": "S0jeje1!"
+      }
+    ],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  }
+]

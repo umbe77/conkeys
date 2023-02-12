@@ -1,27 +1,28 @@
 package api
 
 import (
-	"conkeys/storage"
-	"conkeys/utility"
 	"crypto/rsa"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+
+	"conkeys/storage"
+	"conkeys/utility"
 )
 
-func setUnauthorized(c *gin.Context) {
-	c.JSON(http.StatusUnauthorized, gin.H{
+func setUnauthorized(c *fiber.Ctx) error {
+	c.Status(fiber.StatusUnauthorized)
+	return c.JSON(fiber.Map{
 		"error": "Cannot access this resource",
 	})
 }
 
 type ConkeysClaims struct {
 	Adm bool `json:"adm"`
-	jwt.StandardClaims
+	*jwt.RegisteredClaims
 }
 
 type UserLogin struct {
@@ -29,97 +30,82 @@ type UserLogin struct {
 	Password string `json:"password"`
 }
 
-func Authenticate(priv *rsa.PublicKey, isAdmin bool) gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		if authHeaderVal, ok := c.Request.Header["Authorization"]; ok {
-			authHeader := authHeaderVal[0]
+func Authenticate(priv *rsa.PublicKey, isAdmin bool) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if authHeader, ok := c.GetReqHeaders()["Authorization"]; ok {
 			if !strings.HasPrefix(authHeader, "Bearer ") {
-				setUnauthorized(c)
-				c.Abort()
-				return
+				return setUnauthorized(c)
 			}
 
 			authJwt := strings.Replace(authHeader, "Bearer ", "", 1)
 
-			// token, tkErr := jwt.ParseWithClaims(authJwt, &ConkeysClaims{}, func(t *jwt.Token) (interface{}, error) {
-			// 	if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			// 		return nil, fmt.Errorf("Unexpected signin method")
-			// 	}
-			// 	return priv, nil
-			// })
 			token, tkErr := jwt.Parse(authJwt, func(t *jwt.Token) (interface{}, error) {
 				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-					return nil, fmt.Errorf("Unexpected signin method")
+					return nil, fmt.Errorf("unexpected signin method")
 				}
 				return priv, nil
 			})
 
 			if tkErr != nil {
-				setUnauthorized(c)
-				c.Abort()
-				return
+				return setUnauthorized(c)
 			}
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				if isAdmin && !claims["adm"].(bool) {
-					setUnauthorized(c)
-					c.Abort()
-					return
+					return setUnauthorized(c)
 				}
-				c.Next()
-				return
 			}
+			return c.Next()
 		}
-		setUnauthorized(c)
-		c.Abort()
+
+		return setUnauthorized(c)
 	}
 }
 
-func Token(u storage.UserStorage, pub *rsa.PrivateKey) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func Token(u storage.UserStorage, pub *rsa.PrivateKey) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		var usr UserLogin
-		if err := c.ShouldBind(&usr); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
+		if err := c.BodyParser(&usr); err != nil {
+			c.Status(fiber.StatusUnprocessableEntity)
+			return c.JSON(fiber.Map{
 				"error": err.Error(),
 			})
-			return
 		}
 
 		pwd := utility.EncondePassword(usr.Password)
 
 		pwd_db, user, usrErr := u.GetPassword(usr.UserName)
 		if usrErr != nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": "User Unauthorized",
+			c.Status(fiber.StatusForbidden)
+			return c.JSON(fiber.Map{
+				"error": "User Unauthorized 1",
 			})
-			return
 		}
 
 		if pwd != pwd_db {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": "User Unauthorized",
+			c.Status(fiber.StatusForbidden)
+			return c.JSON(fiber.Map{
+				"error": "User Unauthorized 2",
 			})
-			return
 		}
 
 		claims := ConkeysClaims{
 			user.IsAdmin,
-			jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
+			&jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)),
 				Issuer:    "UMBE",
-				IssuedAt:  time.Now().Unix(),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
 			},
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
 
 		tokenString, tkErr := token.SignedString(pub)
 		if tkErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{})
-			return
+			return tkErr
+			//TODO: Add Logging
 		}
 
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"token": tokenString,
 			"user":  user,
 		})

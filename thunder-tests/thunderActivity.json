@@ -1,0 +1,187 @@
+[
+  {
+    "_id": "386cbca3-fd5d-4b6d-a8ba-ce7d75c56dca",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/keys",
+    "url": "http://localhost:8080/keys",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T15:20:49.032Z",
+    "modified": "2023-02-11T15:20:49.032Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "ec0ab89e-a38b-4d87-b6d1-fc0a04511e3b",
+    "colId": "history",
+    "containerId": "",
+    "name": "https://localhost:8080/api/keys",
+    "url": "https://localhost:8080/api/keys",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T15:21:46.082Z",
+    "modified": "2023-02-11T15:21:46.082Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "4a726e3f-d03a-48d8-99d5-7d8a1349ce60",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/keys",
+    "url": "http://localhost:8080/api/keys",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T15:21:52.205Z",
+    "modified": "2023-02-11T15:21:52.205Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "72f2eb34-85c9-4319-b62a-553fe2436f88",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/ping",
+    "url": "http://localhost:8080/ping",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T15:42:17.980Z",
+    "modified": "2023-02-11T15:42:17.980Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "e652923d-70ec-40aa-a6ca-4c936b5c86b0",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/key/pippo",
+    "url": "http://localhost:8080/api/key/pippo",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T17:41:40.361Z",
+    "modified": "2023-02-11T17:41:40.361Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "da6cee9e-3276-4e24-a0a2-0f4020c884a1",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/keys/dec",
+    "url": "http://localhost:8080/api/keys/dec",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-11T17:46:23.027Z",
+    "modified": "2023-02-11T17:46:23.027Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "e55335b0-4678-4950-ac75-bfc562f8446b",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/token",
+    "url": "http://localhost:8080/api/token",
+    "method": "POST",
+    "sortNum": 0,
+    "created": "2023-02-11T18:15:35.591Z",
+    "modified": "2023-02-11T18:16:55.530Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"userName\": \"admin\",\n  \"password\": \"complicate_pwd\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "d880bc2b-85f9-4b91-94dc-5d99d4a695b4",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/key/pippo",
+    "url": "http://localhost:8080/api/key/pippo",
+    "method": "PUT",
+    "sortNum": 0,
+    "created": "2023-02-12T00:11:17.511Z",
+    "modified": "2023-02-12T00:16:43.192Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"T\": 2,\n  \"V\": \"pluto\"\n}",
+      "form": []
+    },
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "5bb2b3b7-fa7e-406d-a3f2-51e1c6fda7f7",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/key-enc/pippo",
+    "url": "http://localhost:8080/api/key-enc/pippo",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-12T09:07:11.339Z",
+    "modified": "2023-02-12T09:07:11.339Z",
+    "headers": [],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "af0f3a51-a525-4a17-b2e2-b5f3bdc03b2e",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/users",
+    "url": "http://localhost:8080/api/users",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2023-02-12T09:15:08.287Z",
+    "modified": "2023-02-12T09:15:08.287Z",
+    "headers": [],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  },
+  {
+    "_id": "74bbc7e4-5b64-494c-a61f-be3430102e6d",
+    "colId": "history",
+    "containerId": "",
+    "name": "http://localhost:8080/api/user/password/roberto",
+    "url": "http://localhost:8080/api/user/password/roberto",
+    "method": "PATCH",
+    "sortNum": 0,
+    "created": "2023-02-12T09:17:34.555Z",
+    "modified": "2023-02-12T09:17:34.555Z",
+    "headers": [
+      {
+        "name": "X-PWD",
+        "value": "S0jeej!"
+      }
+    ],
+    "params": [],
+    "auth": {
+      "type": "bearer",
+      "bearer": "{{token}}"
+    },
+    "tests": []
+  }
+]

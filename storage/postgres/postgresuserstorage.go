@@ -1,36 +1,24 @@
 package postgres
 
 import (
-	"conkeys/config"
-	"conkeys/storage"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+
+	"conkeys/storage"
 )
 
-type PostgresUserStorage struct{}
+type PostgresUserStorage struct {
+	db *sql.DB
+}
 
-var dbUsers *sql.DB
-
-func (s PostgresUserStorage) Init() {
-	cfg := config.GetConfig()
-	connectionUri := "postgres://conkeys:S0jeje1!@localhost/conkeys?sslmode=disable"
-	if cfg.Postgres.ConnectionUri != "" {
-		connectionUri = cfg.Postgres.ConnectionUri
+func NewUserStorage(db *sql.DB) *PostgresUserStorage {
+	store := &PostgresUserStorage{
+		db: db,
 	}
 
-	var err error
-	dbUsers, err = sql.Open("postgres", connectionUri)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = dbUsers.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, cErr := dbUsers.Exec(`CREATE TABLE IF NOT EXISTS users (
+	_, err := store.db.Exec(`CREATE TABLE IF NOT EXISTS users (
 		username VARCHAR PRIMARY KEY NOT NULL,
 		firstname VARCHAR NULL,
         lastname VARCHAR NULL,
@@ -38,13 +26,14 @@ func (s PostgresUserStorage) Init() {
         "password" VARCHAR,
 		isAdmin boolean
 	)`)
-	if cErr != nil {
-		log.Fatal(cErr)
+	if err != nil {
+		log.Fatal(err)
 	}
+	return store
 }
 
-func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
-	stmt, err := dbUsers.Prepare("SELECT FirstName, LastName, Email, IsAdmin FROM users WHERE UserName = $1")
+func (s *PostgresUserStorage) Get(userName string) (storage.User, error) {
+	stmt, err := s.db.Prepare("SELECT FirstName, LastName, Email, IsAdmin FROM users WHERE UserName = $1")
 	if err != nil {
 		return storage.User{}, nil
 	}
@@ -74,12 +63,12 @@ func (s PostgresUserStorage) Get(userName string) (storage.User, error) {
 	return storage.User{}, errors.New("no user found")
 }
 
-func getAllUsers() (*sql.Rows, error) {
-	return dbUsers.Query("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users")
+func getAllUsers(db *sql.DB) (*sql.Rows, error) {
+	return db.Query("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users")
 }
 
-func getUsersByQuery(query string) (*sql.Rows, error) {
-	stmt, err := dbUsers.Prepare("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
+func getUsersByQuery(db *sql.DB, query string) (*sql.Rows, error) {
+	stmt, err := db.Prepare("SELECT UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
 
 	if err != nil {
 		return nil, err
@@ -88,14 +77,14 @@ func getUsersByQuery(query string) (*sql.Rows, error) {
 	return stmt.Query(fmt.Sprintf("%%%s%%", query))
 }
 
-func (s PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
+func (s *PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
 	result := make([]storage.User, 0)
 
 	rows, qErr := (func() (*sql.Rows, error) {
 		if len(query) > 0 {
-			return getUsersByQuery(query)
+			return getUsersByQuery(s.db, query)
 		}
-		return getAllUsers()
+		return getAllUsers(s.db)
 	})()
 
 	if qErr != nil {
@@ -122,8 +111,8 @@ func (s PostgresUserStorage) GetUsers(query string) ([]storage.User, error) {
 	return result, nil
 }
 
-func (s PostgresUserStorage) Add(usr storage.User) error {
-	stmt, err := dbUsers.Prepare(`INSERT INTO users
+func (s *PostgresUserStorage) Add(usr storage.User) error {
+	stmt, err := s.db.Prepare(`INSERT INTO users
 	(UserName, FirstName, LastName, Email, IsAdmin)
 	VALUES
 	($1, $2, $3, $4, $5)`)
@@ -135,8 +124,8 @@ func (s PostgresUserStorage) Add(usr storage.User) error {
 	return iErr
 }
 
-func (s PostgresUserStorage) Update(usr storage.User) error {
-	stmt, err := dbUsers.Prepare(`UPDATE users
+func (s *PostgresUserStorage) Update(usr storage.User) error {
+	stmt, err := s.db.Prepare(`UPDATE users
 	SET FirstName = $2, LastName = $3, Email = $4, IsAdmin = $5
 	WHERE UserName = $1`)
 
@@ -148,8 +137,8 @@ func (s PostgresUserStorage) Update(usr storage.User) error {
 	return iErr
 }
 
-func (s PostgresUserStorage) Delete(userName string) error {
-	stmt, err := dbUsers.Prepare(`DELETE FROM users WHERE UserName = $1`)
+func (s *PostgresUserStorage) Delete(userName string) error {
+	stmt, err := s.db.Prepare(`DELETE FROM users WHERE UserName = $1`)
 	if err != nil {
 		return err
 	}
@@ -158,8 +147,9 @@ func (s PostgresUserStorage) Delete(userName string) error {
 	return iErr
 }
 
-func (s PostgresUserStorage) SetPassword(userName string, password string) error {
-	stmt, err := dbUsers.Prepare(`UPDATE users
+func (s *PostgresUserStorage) SetPassword(userName string, password string) error {
+	fmt.Printf("Username: %s\nPassword: %s\n", userName, password)
+	stmt, err := s.db.Prepare(`UPDATE users
 	SET Password = $2
 	WHERE UserName = $1`)
 
@@ -171,8 +161,8 @@ func (s PostgresUserStorage) SetPassword(userName string, password string) error
 	return iErr
 }
 
-func (s PostgresUserStorage) GetPassword(userName string) (string, storage.User, error) {
-	stmt, err := dbUsers.Prepare("SELECT Password, UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
+func (s *PostgresUserStorage) GetPassword(userName string) (string, storage.User, error) {
+	stmt, err := s.db.Prepare("SELECT Password, UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
 	if err != nil {
 		return "", storage.User{}, err
 	}

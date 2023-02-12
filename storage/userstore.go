@@ -9,7 +9,6 @@ type User struct {
 }
 
 type UserStorage interface {
-	Init()
 	Get(userName string) (User, error)
 	GetUsers(query string) ([]User, error)
 	Add(usr User) error
