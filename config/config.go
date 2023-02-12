@@ -7,10 +7,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-type MongoDb struct {
-	ConnectionUri string `envconfig:"mongo_connectionuri"`
-}
-
 type PostegresSQL struct {
 	ConnectionUri string `envconfig:"postgres_connectionuri"`
 }
@@ -20,9 +16,7 @@ type Admin struct {
 }
 
 type Config struct {
-	Provider string `envconfig:"provider"`
 	Admin    Admin
-	Mongo    MongoDb
 	Postgres PostegresSQL
 }
 
@@ -32,9 +26,7 @@ var doOnce sync.Once
 
 func GetConfig() *Config {
 	doOnce.Do(func() {
-		cfg = Config{
-			Provider: "memory",
-		}
+		cfg = Config{}
 
 		err := envconfig.Process("", &cfg)
 		if err != nil {
