@@ -162,7 +162,7 @@ func (s *PostgresUserStorage) SetPassword(userName string, password string) erro
 }
 
 func (s *PostgresUserStorage) GetPassword(userName string) (string, storage.User, error) {
-	stmt, err := s.db.Prepare("SELECT Password, UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName like $1")
+	stmt, err := s.db.Prepare("SELECT Password, UserName, FirstName, LastName, Email, IsAdmin FROM Users WHERE UserName = $1")
 	if err != nil {
 		return "", storage.User{}, err
 	}
