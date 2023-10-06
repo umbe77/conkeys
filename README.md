@@ -8,7 +8,7 @@ Clients can access Conckeys via http rest api.
 
 ## TODO
 
-- [ ] Embed etcd in order to create a distributed cluster?
+- ~~[ ] Embed etcd in order to create a distributed cluster?~~
 - [ ] Logging System (Logrus?)
 - [ ] Optimize key search and maybe remove allkeys api
 - [ ] Define length of varchar fields in all postegres storage
