@@ -5,7 +5,7 @@ import (
 )
 
 func TestCheckString_ok(t *testing.T) {
-	testValue := Value{T:String, V: "Hello!"}
+	testValue := Value{T: String, V: "Hello!"}
 
 	check := testValue.CheckType()
 	if !check {
@@ -14,7 +14,7 @@ func TestCheckString_ok(t *testing.T) {
 }
 
 func TestCheckString_ko(t *testing.T) {
-	testValue := Value{T:String, V: 12}
+	testValue := Value{T: String, V: 12}
 
 	check := testValue.CheckType()
 	if check {
@@ -23,7 +23,7 @@ func TestCheckString_ko(t *testing.T) {
 }
 
 func TestCheckBool_ok(t *testing.T) {
-	testValue := Value{T:Boolean, V: true}
+	testValue := Value{T: Boolean, V: true}
 
 	check := testValue.CheckType()
 	if !check {
@@ -32,16 +32,16 @@ func TestCheckBool_ok(t *testing.T) {
 }
 
 func TestCheckBool_ko(t *testing.T) {
-	testValue := Value{T:Boolean, V: "true"}
+	testValue := Value{T: Boolean, V: "true"}
 
 	check := testValue.CheckType()
 	if check {
 		t.Errorf("%v should not be a bool", testValue.V)
 	}
 }
- 
+
 func TestCheckInteger_ok(t *testing.T) {
-	testValue := Value{T:Integer, V: float64(180)}
+	testValue := Value{T: Integer, V: float64(180)}
 
 	check := testValue.CheckType()
 	if !check {
@@ -50,16 +50,16 @@ func TestCheckInteger_ok(t *testing.T) {
 }
 
 func TestCheckInteger_ko(t *testing.T) {
-	testValue := Value{T:Integer, V: true}
+	testValue := Value{T: Integer, V: true}
 
 	check := testValue.CheckType()
 	if check {
 		t.Errorf("%v should not be an integer", testValue.V)
 	}
 }
- 
+
 func TestCheckDecimal_ok(t *testing.T) {
-	testValue := Value{T:Decimal, V: 12.234}
+	testValue := Value{T: Decimal, V: 12.234}
 
 	check := testValue.CheckType()
 	if !check {
@@ -68,11 +68,10 @@ func TestCheckDecimal_ok(t *testing.T) {
 }
 
 func TestCheckDecimal_ko(t *testing.T) {
-	testValue := Value{T:Decimal, V: 12}
+	testValue := Value{T: Decimal, V: 12}
 
 	check := testValue.CheckType()
 	if check {
 		t.Errorf("%v should not be a decimal", testValue.V)
 	}
 }
- 
