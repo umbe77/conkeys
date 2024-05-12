@@ -9,9 +9,11 @@ Clients can access Conckeys via http rest api.
 
 ## TODO
 
-- ~~[ ] Embed etcd in order to create a distributed cluster?~~
+- [ ] Add listening port as Env variable
+- [ ] Add DockerFile in order to use containers
+- [ ] Add dotenvconfig in order to use better systems
+- [ ] Try to use Testcontainers for both dev environment and testing
+    - [ ] Memory storage in order to unit testing
 - [ ] Logging System (Logrus?)
 - [ ] Optimize key search and maybe remove allkeys api
 - [ ] Define length of varchar fields in all postegres storage
-- [ ] Memory storage in order to unit testing
-- [ ] Should we move to tcp communication?
